@@ -7,14 +7,14 @@ using System.Collections.Generic;
 namespace Tenebrous.EditorEnhancements
 {
 	[InitializeOnLoad]
-	public static class TeneHeirachyWindow
+	public static class TeneHeirarchyWindow
 	{
 		private static Dictionary<string, Color> _colorMap;
 		private static string _basePath;
 
 		private static bool _showAll;
 
-		static TeneHeirachyWindow()
+		static TeneHeirarchyWindow()
 		{
 			EditorApplication.hierarchyWindowItemOnGUI += Draw;
 			SceneView.onSceneGUIDelegate += Updated;
@@ -26,15 +26,15 @@ namespace Tenebrous.EditorEnhancements
 			EditorApplication.RepaintHierarchyWindow();
 		}
 
-		private static EditorWindow _heirachyWindow = null;
-		private static EditorWindow HeirachyWindow
+		private static EditorWindow _heirarchyWindow = null;
+		private static EditorWindow HeirarchyWindow
 		{
 			get
 			{
-				if (_heirachyWindow == null)
-					_heirachyWindow = EditorWindow.GetWindow<EditorWindow>("UnityEditor.HeirachyWindow");
+				if (_heirarchyWindow == null)
+					_heirarchyWindow = EditorWindow.GetWindow<EditorWindow>("UnityEditor.HeirarchyWindow");
 
-				return (_heirachyWindow);
+				return (_heirarchyWindow);
 			}
 		}
 
@@ -45,7 +45,7 @@ namespace Tenebrous.EditorEnhancements
 			if (gameObject == null)
 				return;
 
-			EditorWindow heirachyWindow = HeirachyWindow;
+			EditorWindow heirarchyWindow = HeirarchyWindow;
 			Texture tex;
 
 			Color originalColor = GUI.color;
@@ -99,7 +99,7 @@ namespace Tenebrous.EditorEnhancements
 					if (GUI.Button(iconRect, new GUIContent(tex,c.GetType().ToString().Replace("UnityEngine.","")),EditorStyles.label))
 					{
 						c.SetEnabled(!c.GetEnabled());
-						heirachyWindow.Focus();
+						heirarchyWindow.Focus();
 						EditorApplication.RepaintHierarchyWindow();
 						return;
 					}
@@ -110,7 +110,7 @@ namespace Tenebrous.EditorEnhancements
 			GUI.color = originalColor;
 
 			//{
-			//    Rect rect = new Rect(Event.current.mousePosition.x, Event.current.mousePosition.y - heirachyWindow.position.y, 0, 100);
+			//    Rect rect = new Rect(Event.current.mousePosition.x, Event.current.mousePosition.y - heirarchyWindow.position.y, 0, 100);
 
 			//    EditorUtility.DisplayCustomMenu(
 			//        rect,
@@ -156,7 +156,7 @@ namespace Tenebrous.EditorEnhancements
 		private static string _editingName = "";
 		private static Color _editingColor;
 
-		[PreferenceItem("Heirachy Window")]
+		[PreferenceItem("Heirarchy Window")]
 		public static void DrawPrefs()
 		{
 			if (GUI.changed)
