@@ -92,7 +92,7 @@ namespace Tenebrous.EditorEnhancements
 				}
 
 				if( tex == null )
-					tex = EditorUtility.GetMiniThumbnail(c);
+					tex = Common.GetMiniThumbnail(c);
 
 				if (tex != null)
 				{
@@ -125,7 +125,7 @@ namespace Tenebrous.EditorEnhancements
 			Texture tex = null;
 			foreach (Component c in gameObject.GetComponents<Component>())
 			{
-				tex = EditorUtility.GetMiniThumbnail(c);
+				tex = Common.GetMiniThumbnail(c);
 				if( c is Camera || c is Light || c is MeshRenderer )
 					break;
 				tex = null;

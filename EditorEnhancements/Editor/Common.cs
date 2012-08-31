@@ -96,5 +96,14 @@ namespace Tenebrous.EditorEnhancements
 			while (EditorPrefs.HasKey(pName + index))
 				EditorPrefs.DeleteKey(pName + index++);
 		}
+
+		public static Texture GetMiniThumbnail( UnityEngine.Object obj )
+		{
+#if UNITY_4_0
+			return ( AssetPreview.GetMiniThumbnail( obj ) );
+#else
+			return ( EditorUtility.GetMiniThumbnail( obj ) );
+#endif
+		}
 	}
 }
