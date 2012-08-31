@@ -21,32 +21,32 @@ namespace Tenebrous.EditorEnhancements
 			_basePath = Application.dataPath.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
 
 			_colorMap = new Dictionary<string, Color>()
-				            {
-					            {"png", new Color(0.8f, 0.8f, 1.0f)},
-					            {"psd", new Color(0.5f, 0.8f, 1.0f)},
+			{
+				{"png", new Color(0.8f, 0.8f, 1.0f)},
+				{"psd", new Color(0.5f, 0.8f, 1.0f)},
 
-					            {"cs", new Color(0.5f, 1.0f, 0.5f)},
-					            {"js", new Color(0.8f, 1.0f, 0.8f)},
+				{"cs", new Color(0.5f, 1.0f, 0.5f)},
+				{"js", new Color(0.8f, 1.0f, 0.8f)},
 
-					            {"mat", new Color(1.0f, 0.8f, 0.8f)},
-					            {"shader", new Color(1.0f, 0.5f, 0.5f)},
+				{"mat", new Color(1.0f, 0.8f, 0.8f)},
+				{"shader", new Color(1.0f, 0.5f, 0.5f)},
 
-					            {"wav", new Color(0.8f, 0.4f, 1.0f)},
-					            {"mp3", new Color(0.8f, 0.4f, 1.0f)},
-					            {"ogg", new Color(0.8f, 0.4f, 1.0f)},
-				            };
+				{"wav", new Color(0.8f, 0.4f, 1.0f)},
+				{"mp3", new Color(0.8f, 0.4f, 1.0f)},
+				{"ogg", new Color(0.8f, 0.4f, 1.0f)},
+			};
 
 			ReadSettings();
 		}
 
 
-		private static void Draw(string guid, Rect selectionRect)
+		private static void Draw( string pGUID, Rect pDrawingRect )
 		{
-			string path = AssetDatabase.GUIDToAssetPath(guid);
+			string path = AssetDatabase.GUIDToAssetPath(pGUID);
 			string extension = Path.GetExtension(path);
 			string filename = Path.GetFileNameWithoutExtension(path);
 
-			bool icons = selectionRect.height > 20;
+			bool icons = pDrawingRect.height > 20;
 			GUIStyle labelstyle = icons ? EditorStyles.miniLabel : EditorStyles.label;
 
 			if (path.Length == 0)
@@ -81,7 +81,7 @@ namespace Tenebrous.EditorEnhancements
 			extension = extension.Substring(1);
 			string drawextension = extension;
 
-			Rect newRect = selectionRect;
+			Rect newRect = pDrawingRect;
 			Vector2 labelSize = labelstyle.CalcSize(new GUIContent(drawextension));
 
 			if (icons)
@@ -95,7 +95,7 @@ namespace Tenebrous.EditorEnhancements
 			else
 			{
 #if UNITY_4_0
-					newRect.width += selectionRect.x - 16;
+					newRect.width += pDrawingRect.x - 16;
 			newRect.x = 0;
 #else
 				newRect.width += selectionRect.x;
@@ -202,7 +202,7 @@ namespace Tenebrous.EditorEnhancements
 		{
 			string colourinfo;
 
-			_showAll = EditorPrefs.GetBool("TeneProjectWindow_All", false);
+			_showAll = EditorPrefs.GetBool("TeneProjectWindow_All", true);
 
 			string colormap = Common.GetLongPref("TeneProjectWindow_ColorMap");
 		}
