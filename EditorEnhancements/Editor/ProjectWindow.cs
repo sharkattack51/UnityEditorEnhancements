@@ -164,7 +164,7 @@ namespace Tenebrous.EditorEnhancements
 		private static string _editingName = "";
 		private static Color _editingColor;
 
-		[PreferenceItem("Project Window")]
+		[PreferenceItem("Project Pane")]
 		public static void DrawPrefs()
 		{
 			_showAll = EditorGUILayout.Toggle("Show all", _showAll);
@@ -224,11 +224,11 @@ namespace Tenebrous.EditorEnhancements
 
 		private static void ReadSettings()
 		{
-			string colourinfo;
+			//string colourinfo;
 
 			_showAll = EditorPrefs.GetBool("TeneProjectWindow_All", true);
 
-			string colormap = Common.GetLongPref("TeneProjectWindow_ColorMap");
+			//string colormap = Common.GetLongPref("TeneProjectWindow_ColorMap");
 		}
 
 		private static void SaveSettings()

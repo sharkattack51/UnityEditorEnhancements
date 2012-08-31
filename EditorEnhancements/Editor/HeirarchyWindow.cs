@@ -175,11 +175,7 @@ namespace Tenebrous.EditorEnhancements
 
 		//////////////////////////////////////////////////////////////////////
 
-		private static Vector2 _scroll;
-		private static string _editingName = "";
-		private static Color _editingColor;
-
-		[PreferenceItem("Heirarchy Window")]
+		[PreferenceItem("Heirarchy Pane")]
 		public static void DrawPrefs()
 		{
 			if (GUI.changed)
@@ -189,25 +185,12 @@ namespace Tenebrous.EditorEnhancements
 			}
 		}
 
-
 		private static void ReadSettings()
 		{
-			string colourinfo;
-
-			_showAll = EditorPrefs.GetBool("TeneProjectWindow_All", false);
-
-			string colormap = Common.GetLongPref("TeneProjectWindow_ColorMap");
 		}
 
 		private static void SaveSettings()
 		{
-			EditorPrefs.SetBool("TeneProjectWindow_All", _showAll);
-
-			string colormap = "";
-			foreach (KeyValuePair<string, Color> entry in _colorMap)
-				colormap += entry.Key + ":" + Common.ColorToString(entry.Value) + "|";
-
-			Common.SetLongPref("TeneProjectWindow_ColorMap", colormap);
 		}
 	}
 }
