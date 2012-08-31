@@ -98,7 +98,7 @@ namespace Tenebrous.EditorEnhancements
 					newRect.width += pDrawingRect.x - 16;
 			newRect.x = 0;
 #else
-				newRect.width += selectionRect.x;
+				newRect.width += pDrawingRect.x;
 				newRect.x = 0;
 #endif
 
