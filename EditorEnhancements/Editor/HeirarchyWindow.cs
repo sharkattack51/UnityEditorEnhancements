@@ -54,18 +54,18 @@ namespace Tenebrous.EditorEnhancements
 		{
 			get
 			{
-				if (_heirarchyWindow == null)
-					_heirarchyWindow = EditorWindow.GetWindow<EditorWindow>("UnityEditor.HeirarchyWindow");
+				if( _heirarchyWindow == null )
+					_heirarchyWindow = EditorWindow.GetWindow<EditorWindow>( "UnityEditor.HeirarchyWindow" );
 
-				return (_heirarchyWindow);
+				return ( _heirarchyWindow );
 			}
 		}
 
-		private static void Draw(int instanceID, Rect selectionRect)
+		private static void Draw( int instanceID, Rect selectionRect )
 		{
 			// EditorUtility.GetMiniThumbnail()
-			GameObject gameObject = EditorUtility.InstanceIDToObject(instanceID) as GameObject;
-			if (gameObject == null)
+			GameObject gameObject = EditorUtility.InstanceIDToObject( instanceID ) as GameObject;
+			if( gameObject == null )
 				return;
 
 			EditorWindow heirarchyWindow = HeirarchyWindow;
@@ -92,7 +92,7 @@ namespace Tenebrous.EditorEnhancements
 			//}
 
 			//GUI.Label(labelRect, gameObject.name);
-			
+
 			Rect iconRect = selectionRect;
 			iconRect.x = selectionRect.x + selectionRect.width - 16;
 			iconRect.y--;
@@ -104,24 +104,37 @@ namespace Tenebrous.EditorEnhancements
 				if( c is Transform )
 					continue;
 
-				GUI.color = c.GetEnabled() ? Color.white : new Color(0.5f, 0.5f, 0.5f, 0.5f);
+				string tooltip = "";
+
+				GUI.color = c.GetEnabled() ? Color.white : new Color( 0.5f, 0.5f, 0.5f, 0.5f );
 
 				tex = null;
 
-				if (c is MonoBehaviour)
+				if( c == null )
 				{
-					MonoScript ms = MonoScript.FromMonoBehaviour(c as MonoBehaviour);
-					tex = AssetDatabase.GetCachedIcon(AssetDatabase.GetAssetPath(ms));
+					Rect rectX = new Rect( iconRect.x + 4, iconRect.y + 1, 14, iconRect.height );
+					GUI.color = new Color( 1.0f, 0.35f, 0.35f, 1.0f );
+					GUI.Label( rectX, new GUIContent( "X", "Missing Script" ), EditorStyles.boldLabel );
+					iconRect.x -= 9;
+					continue;
+				}
+
+				tooltip = c.GetType().ToString().Replace( "UnityEngine.", "" );
+				if( c is MonoBehaviour )
+				{
+					MonoScript ms = MonoScript.FromMonoBehaviour( c as MonoBehaviour );
+					tex = AssetDatabase.GetCachedIcon( AssetDatabase.GetAssetPath( ms ) );
 				}
 
 				if( tex == null )
-					tex = Common.GetMiniThumbnail(c);
+					tex = Common.GetMiniThumbnail( c );
 
-				if (tex != null)
+				if( tex != null )
 				{
-					if (GUI.Button(iconRect, new GUIContent(tex,c.GetType().ToString().Replace("UnityEngine.","")),EditorStyles.label))
+					GUI.DrawTexture( iconRect, tex, ScaleMode.ScaleToFit );
+					if( GUI.Button( iconRect, new GUIContent( "", tooltip ), EditorStyles.label ) )
 					{
-						c.SetEnabled(!c.GetEnabled());
+						c.SetEnabled( !c.GetEnabled() );
 						heirarchyWindow.Focus();
 						EditorApplication.RepaintHierarchyWindow();
 						return;
@@ -143,44 +156,37 @@ namespace Tenebrous.EditorEnhancements
 			//}
 		}
 
-		public static Texture GetMainIcon( GameObject gameObject )
-		{
-			Texture tex = null;
-			foreach (Component c in gameObject.GetComponents<Component>())
-			{
-				tex = Common.GetMiniThumbnail(c);
-				if( c is Camera || c is Light || c is MeshRenderer )
-					break;
-				tex = null;
-			}
-			return( tex );
-		}
-
 		public static bool GetEnabled( this Component pComponent )
 		{
-			PropertyInfo p = pComponent.GetType().GetProperty("enabled", typeof (bool));
+			if( pComponent == null )
+				return ( true );
 
-			if (p != null)
-				return( (bool)p.GetValue(pComponent,null) );
+			PropertyInfo p = pComponent.GetType().GetProperty( "enabled", typeof( bool ) );
 
-			return( true );
+			if( p != null )
+				return ( (bool)p.GetValue( pComponent, null ) );
+
+			return ( true );
 		}
 		public static void SetEnabled( this Component pComponent, bool bNewValue )
 		{
+			if( pComponent == null )
+				return;
+
 			Undo.RegisterUndo( pComponent, bNewValue ? "Enable Component" : "Disable Component" );
 
-			PropertyInfo p = pComponent.GetType().GetProperty("enabled", typeof(bool));
+			PropertyInfo p = pComponent.GetType().GetProperty( "enabled", typeof( bool ) );
 
-			if (p != null)
-				p.SetValue(pComponent, bNewValue, null);
+			if( p != null )
+				p.SetValue( pComponent, bNewValue, null );
 		}
 
 		//////////////////////////////////////////////////////////////////////
 
-		[PreferenceItem("Heirarchy Pane")]
+		[PreferenceItem( "Heirarchy Pane" )]
 		public static void DrawPrefs()
 		{
-			if (GUI.changed)
+			if( GUI.changed )
 			{
 				SaveSettings();
 				EditorApplication.RepaintHierarchyWindow();
