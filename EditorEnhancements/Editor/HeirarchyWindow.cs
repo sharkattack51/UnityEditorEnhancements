@@ -167,6 +167,8 @@ namespace Tenebrous.EditorEnhancements
 		}
 		public static void SetEnabled( this Component pComponent, bool bNewValue )
 		{
+			Undo.RegisterUndo( pComponent, bNewValue ? "Enable Component" : "Disable Component" );
+
 			PropertyInfo p = pComponent.GetType().GetProperty("enabled", typeof(bool));
 
 			if (p != null)
