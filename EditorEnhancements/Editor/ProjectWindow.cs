@@ -36,11 +36,17 @@ namespace Tenebrous.EditorEnhancements
 		private static Dictionary<string, int> _fileCount = new Dictionary<string, int>();
 		private static string _basePath;
 
-		private static bool _showAll;
+		private static bool _setting_showAllExtensions;
+		private static bool _setting_showHoverPreview;
+
+		private static string _lastGUID;
+		private static string _currentGUID;
+		private static int _updateThrottle;
 
 		static TeneProjectWindow()
 		{
 			EditorApplication.projectWindowItemOnGUI += Draw;
+			EditorApplication.update += Update;
 
 			_basePath = Application.dataPath.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
 
@@ -63,6 +69,70 @@ namespace Tenebrous.EditorEnhancements
 			ReadSettings();
 		}
 
+		private static ProjectWindowPreview _previewWindow;
+		private static void Update()
+		{
+			if( !_setting_showHoverPreview )
+				return;
+
+			if( _lastGUID == null && _currentGUID == null )
+				return;
+
+			if( _lastGUID != _currentGUID )
+			{
+				_lastGUID = _currentGUID;
+
+				if( _lastGUID != null )
+				{
+					string path = AssetDatabase.GUIDToAssetPath( _lastGUID );
+					object _asset = AssetDatabase.LoadAssetAtPath( path, typeof( object ) );
+
+					if( _asset is MonoScript || _asset is Shader || _asset.GetType().ToString() == "UnityEngine.Object" )
+						return;
+
+					if( _previewWindow == null )
+						_previewWindow = EditorWindow.GetWindow<ProjectWindowPreview>(true);
+
+					_previewWindow.Repaint();
+
+					Rect projectWindowPos = Common.ProjectWindow.position;
+					Rect newPos = new Rect( projectWindowPos.x - 210, projectWindowPos.y, 200, 200 );
+
+					_previewWindow.position = newPos;
+					_previewWindow.GUID = _lastGUID;
+
+					newPos = _previewWindow.position;
+
+					if( newPos.x < 0 )
+						newPos.x = projectWindowPos.x + projectWindowPos.width;
+
+					if( newPos.y < 0 )
+						newPos.y = 0;
+
+					_previewWindow.position = newPos;
+
+					Common.ProjectWindow.Focus();
+				}
+				else
+				{
+					if( _previewWindow != null )
+					{
+						_previewWindow.Close();
+						_previewWindow = null;
+					}
+				}
+			}
+			else
+			{
+				_updateThrottle++;
+				if( _updateThrottle > 20 )
+				{
+					_currentGUID = null;
+					Common.ProjectWindow.Repaint();
+					_updateThrottle = 0;
+				}
+			}
+		}
 
 		private static void Draw( string pGUID, Rect pDrawingRect )
 		{
@@ -81,10 +151,17 @@ namespace Tenebrous.EditorEnhancements
 			if (extension.Length == 0 || filename.Length == 0)
 				return;
 
+#if UNITY_4_0
+			// ignore scrollbar width in Unity 4b7
+			if( Event.current.mousePosition.x < pDrawingRect.width - 16 )
+#endif
+			if( pDrawingRect.Contains( Event.current.mousePosition ) )
+				_currentGUID = pGUID;
+
 			string searchpath = _basePath +
 			                    path.Substring(6).Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
 
-			if (!_showAll)
+			if (!_setting_showAllExtensions)
 			{
 				int files;
 				string pathnoext = path + Path.AltDirectorySeparatorChar + filename;
@@ -111,7 +188,6 @@ namespace Tenebrous.EditorEnhancements
 			if (icons)
 			{
 				labelSize = labelstyle.CalcSize(new GUIContent(drawextension));
-				//newRect.y += newRect.height - 25;
 				newRect.x += newRect.width - labelSize.x;
 				newRect.width = labelSize.x;
 				newRect.height = labelSize.y;
@@ -119,8 +195,8 @@ namespace Tenebrous.EditorEnhancements
 			else
 			{
 #if UNITY_4_0
-					newRect.width += pDrawingRect.x - 16;
-			newRect.x = 0;
+				newRect.width += pDrawingRect.x - 16;
+				newRect.x = 0;
 #else
 				newRect.width += pDrawingRect.x;
 				newRect.x = 0;
@@ -160,15 +236,17 @@ namespace Tenebrous.EditorEnhancements
 
 		//////////////////////////////////////////////////////////////////////
 
-		private static Vector2 _scroll;
-		private static string _editingName = "";
-		private static Color _editingColor;
+//		private static Vector2 _scroll;
+//		private static string _editingName = "";
+//		private static Color _editingColor;
 
 		[PreferenceItem("Project Pane")]
 		public static void DrawPrefs()
 		{
-			_showAll = EditorGUILayout.Toggle("Show all", _showAll);
+			_setting_showAllExtensions = EditorGUILayout.Toggle( "Show all", _setting_showAllExtensions);
+			_setting_showHoverPreview = EditorGUILayout.Toggle( "Show asset preview on hover", _setting_showHoverPreview );
 
+/*
 			string removeExtension = null;
 			string changeExtension = null;
 			Color changeColor = Color.black;
@@ -212,13 +290,12 @@ namespace Tenebrous.EditorEnhancements
 			{
 			}
 			EditorGUILayout.EndHorizontal();
+*/
 
 			if (GUI.changed)
 			{
 				SaveSettings();
-
-				// this doesn't appear to work in Unity 4b7
-				EditorApplication.RepaintProjectWindow();
+				Common.ProjectWindow.Repaint();
 			}
 		}
 
@@ -226,14 +303,16 @@ namespace Tenebrous.EditorEnhancements
 		{
 			//string colourinfo;
 
-			_showAll = EditorPrefs.GetBool("TeneProjectWindow_All", true);
+			_setting_showAllExtensions = EditorPrefs.GetBool("TeneProjectWindow_All", true);
+			_setting_showHoverPreview = EditorPrefs.GetBool( "TeneProjectWindow_PreviewOnHover", true );
 
 			//string colormap = Common.GetLongPref("TeneProjectWindow_ColorMap");
 		}
 
 		private static void SaveSettings()
 		{
-			EditorPrefs.SetBool("TeneProjectWindow_All", _showAll);
+			EditorPrefs.SetBool("TeneProjectWindow_All", _setting_showAllExtensions);
+			EditorPrefs.GetBool( "TeneProjectWindow_PreviewOnHover", _setting_showHoverPreview );
 
 			string colormap = "";
 			foreach (KeyValuePair<string, Color> entry in _colorMap)

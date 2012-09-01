@@ -30,14 +30,17 @@ using System.Collections.Generic;
 namespace Tenebrous.EditorEnhancements
 {
 	[InitializeOnLoad]
-	public static class TeneHeirarchyWindow
+	public static class TeneHierarchyWindow
 	{
 		private static Dictionary<string, Color> _colorMap;
 		private static string _basePath;
 
 		private static bool _showAll;
+		private static int _shownLayers;
 
-		static TeneHeirarchyWindow()
+		private static Camera _sceneCam;
+
+		static TeneHierarchyWindow()
 		{
 			EditorApplication.hierarchyWindowItemOnGUI += Draw;
 			SceneView.onSceneGUIDelegate += Updated;
@@ -46,55 +49,38 @@ namespace Tenebrous.EditorEnhancements
 
 		static void Updated( SceneView pScene )
 		{
-			EditorApplication.RepaintHierarchyWindow();
-		}
-
-		private static EditorWindow _heirarchyWindow = null;
-		private static EditorWindow HeirarchyWindow
-		{
-			get
+			if( Event.current.type == EventType.Repaint )
 			{
-				if( _heirarchyWindow == null )
-					_heirarchyWindow = EditorWindow.GetWindow<EditorWindow>( "UnityEditor.HeirarchyWindow" );
-
-				return ( _heirarchyWindow );
+				if( _sceneCam == null )
+					if( SceneView.GetAllSceneCameras().Length > 0 )
+						_sceneCam = SceneView.GetAllSceneCameras()[0]; 
+				
+				Common.HierarchyWindow.Repaint();
 			}
 		}
 
-		private static void Draw( int instanceID, Rect selectionRect )
+		private static void Draw( int pInstanceID, Rect pDrawingRect )
 		{
-			// EditorUtility.GetMiniThumbnail()
-			GameObject gameObject = EditorUtility.InstanceIDToObject( instanceID ) as GameObject;
+			GameObject gameObject = EditorUtility.InstanceIDToObject( pInstanceID ) as GameObject;
 			if( gameObject == null )
 				return;
 
-			EditorWindow heirarchyWindow = HeirarchyWindow;
+			EditorWindow hierarchyWindow = Common.HierarchyWindow;
 			Texture tex;
 
 			Color originalColor = GUI.color;
 
-			//Color cc = Common.DefaultBackgroundColor;
-			//cc.a = 1;
-			//GUI.color = cc;
-			//GUI.DrawTexture(selectionRect, EditorGUIUtility.whiteTexture);
+			if( _sceneCam != null && ( ( 1 << gameObject.layer ) & _sceneCam.cullingMask) == 0 )
+			{
+				Rect labelRect = pDrawingRect;
+				labelRect.width = EditorStyles.label.CalcSize( new GUIContent( gameObject.name ) ).x;
+				labelRect.x-=2;
+				labelRect.y-=4;
+				GUI.Label( labelRect, "".PadRight( gameObject.name.Length, '_' ) );
+			}
 
-			//GUI.color = originalColor;
-
-			//Rect labelRect = selectionRect;
-
-			//tex = GetMainIcon(gameObject);
-			//if (tex != null)
-			//{
-			//    Rect iconLabelRect = new Rect(labelRect.x, labelRect.y, 16, 16 );
-			//    GUI.Label( iconLabelRect, new GUIContent(tex), EditorStyles.label );
-			//    labelRect.x += iconLabelRect.width;
-			//    labelRect.width -= iconLabelRect.width;
-			//}
-
-			//GUI.Label(labelRect, gameObject.name);
-
-			Rect iconRect = selectionRect;
-			iconRect.x = selectionRect.x + selectionRect.width - 16;
+			Rect iconRect = pDrawingRect;
+			iconRect.x = pDrawingRect.x + pDrawingRect.width - 16;
 			iconRect.y--;
 			iconRect.width = 16;
 			iconRect.height = 16;
@@ -135,8 +121,8 @@ namespace Tenebrous.EditorEnhancements
 					if( GUI.Button( iconRect, new GUIContent( "", tooltip ), EditorStyles.label ) )
 					{
 						c.SetEnabled( !c.GetEnabled() );
-						heirarchyWindow.Focus();
-						EditorApplication.RepaintHierarchyWindow();
+						hierarchyWindow.Focus();
+						Common.HierarchyWindow.Repaint();
 						return;
 					}
 					iconRect.x -= iconRect.width;
@@ -146,7 +132,7 @@ namespace Tenebrous.EditorEnhancements
 			GUI.color = originalColor;
 
 			//{
-			//    Rect rect = new Rect(Event.current.mousePosition.x, Event.current.mousePosition.y - heirarchyWindow.position.y, 0, 100);
+			//    Rect rect = new Rect(Event.current.mousePosition.x, Event.current.mousePosition.y - hierarchyWindow.position.y, 0, 100);
 
 			//    EditorUtility.DisplayCustomMenu(
 			//        rect,
@@ -178,18 +164,21 @@ namespace Tenebrous.EditorEnhancements
 			PropertyInfo p = pComponent.GetType().GetProperty( "enabled", typeof( bool ) );
 
 			if( p != null )
+			{
 				p.SetValue( pComponent, bNewValue, null );
+				EditorUtility.SetDirty( pComponent.gameObject );
+			}
 		}
 
 		//////////////////////////////////////////////////////////////////////
 
-		[PreferenceItem( "Heirarchy Pane" )]
+		[PreferenceItem( "Hierarchy Pane" )]
 		public static void DrawPrefs()
 		{
 			if( GUI.changed )
 			{
 				SaveSettings();
-				EditorApplication.RepaintHierarchyWindow();
+				Common.HierarchyWindow.Repaint();
 			}
 		}
 

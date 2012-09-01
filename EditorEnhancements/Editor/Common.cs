@@ -22,6 +22,7 @@
  * Latest version: http://hg.tenebrous.co.uk/unityeditorenhancements
 */
 
+using System;
 using UnityEngine;
 using UnityEditor;
 
@@ -54,6 +55,7 @@ namespace Tenebrous.EditorEnhancements
 							&& float.TryParse(elements[3], out c.b)
 							&& float.TryParse(elements[4], out c.a))
 						{
+							c.a = 1;
 							_lastBackgroundColour = c;
 							_lastBackgroundColourString = value;
 							return (c);
@@ -128,5 +130,47 @@ namespace Tenebrous.EditorEnhancements
 			return ( EditorUtility.GetMiniThumbnail( obj ) );
 #endif
 		}
+
+		public static Texture2D GetAssetPreview( UnityEngine.Object obj )
+		{
+#if UNITY_4_0
+			return ( AssetPreview.GetAssetPreview( obj ) );
+#else
+			return ( EditorUtility.GetAssetPreview( obj ) );
+#endif
+		}
+
+
+		public static EditorWindow GetWindowByName( string pName )
+		{
+			UnityEngine.Object[] objectList = Resources.FindObjectsOfTypeAll( typeof( EditorWindow ) );
+
+			foreach( UnityEngine.Object obj in objectList )
+				if( obj.GetType().ToString() == pName )
+					return ( (EditorWindow)obj );
+
+			return ( null );
+		}
+
+		private static EditorWindow _projectWindow = null;
+		public static EditorWindow ProjectWindow
+		{
+			get
+			{
+				_projectWindow = _projectWindow ?? GetWindowByName( "UnityEditor.ProjectWindow" ) ?? GetWindowByName( "UnityEditor.ObjectBrowser" );
+				return ( _projectWindow );
+			}
+		}
+
+
+		private static EditorWindow _hierarchyWindow = null;
+		public static EditorWindow HierarchyWindow
+		{
+			get
+			{
+				_hierarchyWindow = _hierarchyWindow ?? GetWindowByName( "UnityEditor.HierarchyWindow" );
+				return ( _hierarchyWindow );
+			}
+		}
 	}
-}
+}																	
