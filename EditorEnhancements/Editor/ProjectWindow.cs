@@ -48,7 +48,7 @@ namespace Tenebrous.EditorEnhancements
 			EditorApplication.projectWindowItemOnGUI += Draw;
 			EditorApplication.update += Update;
 
-			_basePath = Application.dataPath.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
+			_basePath = Application.dataPath.Replace( Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar );
 
 			_colorMap = new Dictionary<string, Color>()
 			{
@@ -91,7 +91,7 @@ namespace Tenebrous.EditorEnhancements
 						return;
 
 					if( _previewWindow == null )
-						_previewWindow = EditorWindow.GetWindow<ProjectWindowPreview>(true);
+						_previewWindow = EditorWindow.GetWindow<ProjectWindowPreview>( true );
 
 					_previewWindow.Repaint();
 
@@ -136,19 +136,19 @@ namespace Tenebrous.EditorEnhancements
 
 		private static void Draw( string pGUID, Rect pDrawingRect )
 		{
-			string path = AssetDatabase.GUIDToAssetPath(pGUID);
-			string extension = Path.GetExtension(path);
-			string filename = Path.GetFileNameWithoutExtension(path);
+			string path = AssetDatabase.GUIDToAssetPath( pGUID );
+			string extension = Path.GetExtension( path );
+			string filename = Path.GetFileNameWithoutExtension( path );
 
 			bool icons = pDrawingRect.height > 20;
 			GUIStyle labelstyle = icons ? EditorStyles.miniLabel : EditorStyles.label;
 
-			if (path.Length == 0)
+			if( path.Length == 0 )
 				return;
 
-			path = Path.GetDirectoryName(path);
+			path = Path.GetDirectoryName( path );
 
-			if (extension.Length == 0 || filename.Length == 0)
+			if( extension.Length == 0 || filename.Length == 0 )
 				return;
 
 #if UNITY_4_0
@@ -159,35 +159,45 @@ namespace Tenebrous.EditorEnhancements
 				_currentGUID = pGUID;
 
 			string searchpath = _basePath +
-			                    path.Substring(6).Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
+								path.Substring( 6 ).Replace( Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar );
 
-			if (!_setting_showAllExtensions)
+			if( !_setting_showAllExtensions )
 			{
-				int files;
+				int files = 0;
 				string pathnoext = path + Path.AltDirectorySeparatorChar + filename;
-				if (!_fileCount.TryGetValue(pathnoext, out files))
+
+				if( !_fileCount.TryGetValue( pathnoext, out files ) )
 				{
-					files = Directory.GetFiles(searchpath, filename + ".*").Length;
+					files = 1;
+					string[] otherFilenames = Directory.GetFiles( searchpath, filename + ".*" );
+					foreach( string otherFilename in otherFilenames )
+					{
+						if( otherFilename.EndsWith( filename + extension ) )
+							continue;
+
+						if( otherFilename.EndsWith( ".meta" ) )
+							continue;
+
+						files++;
+						break;
+					}
+
 					_fileCount[pathnoext] = files;
 				}
 
-				if (files == 1)
+				if( files <= 1 )
 					return;
-
-				if (EditorSettings.externalVersionControl == ExternalVersionControl.Generic)
-					if (files == 2)
-						return;
 			}
 
-			extension = extension.Substring(1);
+			extension = extension.Substring( 1 );
 			string drawextension = extension;
 
 			Rect newRect = pDrawingRect;
-			Vector2 labelSize = labelstyle.CalcSize(new GUIContent(drawextension));
+			Vector2 labelSize = labelstyle.CalcSize( new GUIContent( drawextension ) );
 
-			if (icons)
+			if( icons )
 			{
-				labelSize = labelstyle.CalcSize(new GUIContent(drawextension));
+				labelSize = labelstyle.CalcSize( new GUIContent( drawextension ) );
 				newRect.x += newRect.width - labelSize.x;
 				newRect.width = labelSize.x;
 				newRect.height = labelSize.y;
@@ -205,7 +215,7 @@ namespace Tenebrous.EditorEnhancements
 				newRect.x = newRect.width - labelSize.x - 4;
 
 				drawextension = "." + drawextension;
-				labelSize = labelstyle.CalcSize(new GUIContent(drawextension));
+				labelSize = labelstyle.CalcSize( new GUIContent( drawextension ) );
 
 				newRect.width = labelSize.x + 1;
 			}
@@ -217,82 +227,82 @@ namespace Tenebrous.EditorEnhancements
 			newColor = Common.DefaultBackgroundColor;
 			newColor.a = 1;
 			GUI.color = newColor;
-			GUI.DrawTexture(newRect, EditorGUIUtility.whiteTexture);
+			GUI.DrawTexture( newRect, EditorGUIUtility.whiteTexture );
 
-			if (!_colorMap.TryGetValue(extension.ToLower(), out newColor))
+			if( !_colorMap.TryGetValue( extension.ToLower(), out newColor ) )
 				newColor = Color.grey;
 
 			GUI.color = newColor;
-			GUI.Label(newRect, drawextension, labelstyle);
+			GUI.Label( newRect, drawextension, labelstyle );
 			GUI.color = color;
 		}
 
-		public static void ClearCache(string sAsset)
+		public static void ClearCache( string sAsset )
 		{
-			_fileCount.Remove(Path.GetDirectoryName(sAsset) + Path.AltDirectorySeparatorChar +
-			                  Path.GetFileNameWithoutExtension(sAsset));
+			_fileCount.Remove( Path.GetDirectoryName( sAsset ) + Path.AltDirectorySeparatorChar +
+							  Path.GetFileNameWithoutExtension( sAsset ) );
 		}
 
 
 		//////////////////////////////////////////////////////////////////////
 
-//		private static Vector2 _scroll;
-//		private static string _editingName = "";
-//		private static Color _editingColor;
+		//		private static Vector2 _scroll;
+		//		private static string _editingName = "";
+		//		private static Color _editingColor;
 
-		[PreferenceItem("Project Pane")]
+		[PreferenceItem( "Project Pane" )]
 		public static void DrawPrefs()
 		{
-			_setting_showAllExtensions = EditorGUILayout.Toggle( "Show all", _setting_showAllExtensions);
+			_setting_showAllExtensions = EditorGUILayout.Toggle( "Show all", _setting_showAllExtensions );
 			_setting_showHoverPreview = EditorGUILayout.Toggle( "Show asset preview on hover", _setting_showHoverPreview );
 
-/*
-			string removeExtension = null;
-			string changeExtension = null;
-			Color changeColor = Color.black;
+			/*
+						string removeExtension = null;
+						string changeExtension = null;
+						Color changeColor = Color.black;
 
-			EditorGUILayout.Space();
-			foreach (KeyValuePair<string, Color> ext in _colorMap)
-			{
-				EditorGUILayout.BeginHorizontal(GUILayout.Width(300));
-				EditorGUILayout.SelectableLabel(ext.Key, GUILayout.Width(80), GUILayout.Height(16));
+						EditorGUILayout.Space();
+						foreach (KeyValuePair<string, Color> ext in _colorMap)
+						{
+							EditorGUILayout.BeginHorizontal(GUILayout.Width(300));
+							EditorGUILayout.SelectableLabel(ext.Key, GUILayout.Width(80), GUILayout.Height(16));
 
-				Color c = EditorGUILayout.ColorField(ext.Value);
-				if (c != ext.Value)
-				{
-					changeExtension = ext.Key;
-					changeColor = c;
-				}
+							Color c = EditorGUILayout.ColorField(ext.Value);
+							if (c != ext.Value)
+							{
+								changeExtension = ext.Key;
+								changeColor = c;
+							}
 
-				if (GUILayout.Button("del", GUILayout.Width(42)))
-				{
-					_editingName = ext.Key;
-					_editingColor = ext.Value;
-					removeExtension = ext.Key;
-				}
+							if (GUILayout.Button("del", GUILayout.Width(42)))
+							{
+								_editingName = ext.Key;
+								_editingColor = ext.Value;
+								removeExtension = ext.Key;
+							}
 
-				EditorGUILayout.EndHorizontal();
-			}
-			//GUILayout.Label("", GUILayout.Width(32));
-			//EditorGUILayout.EndScrollView();
+							EditorGUILayout.EndHorizontal();
+						}
+						//GUILayout.Label("", GUILayout.Width(32));
+						//EditorGUILayout.EndScrollView();
 
-			if (removeExtension != null)
-				_colorMap.Remove(removeExtension);
+						if (removeExtension != null)
+							_colorMap.Remove(removeExtension);
 
-			if (changeExtension != null)
-				_colorMap[changeExtension] = changeColor;
+						if (changeExtension != null)
+							_colorMap[changeExtension] = changeColor;
 
-			EditorGUILayout.BeginHorizontal();
-			GUILayout.Label("", GUILayout.Width(32));
-			_editingName = EditorGUILayout.TextField(_editingName, GUILayout.Width(80));
-			_editingColor = EditorGUILayout.ColorField(_editingColor);
-			if (GUILayout.Button("add", GUILayout.Width(42)))
-			{
-			}
-			EditorGUILayout.EndHorizontal();
-*/
+						EditorGUILayout.BeginHorizontal();
+						GUILayout.Label("", GUILayout.Width(32));
+						_editingName = EditorGUILayout.TextField(_editingName, GUILayout.Width(80));
+						_editingColor = EditorGUILayout.ColorField(_editingColor);
+						if (GUILayout.Button("add", GUILayout.Width(42)))
+						{
+						}
+						EditorGUILayout.EndHorizontal();
+			*/
 
-			if (GUI.changed)
+			if( GUI.changed )
 			{
 				SaveSettings();
 				Common.ProjectWindow.Repaint();
@@ -303,7 +313,7 @@ namespace Tenebrous.EditorEnhancements
 		{
 			//string colourinfo;
 
-			_setting_showAllExtensions = EditorPrefs.GetBool("TeneProjectWindow_All", true);
+			_setting_showAllExtensions = EditorPrefs.GetBool( "TeneProjectWindow_All", true );
 			_setting_showHoverPreview = EditorPrefs.GetBool( "TeneProjectWindow_PreviewOnHover", true );
 
 			//string colormap = Common.GetLongPref("TeneProjectWindow_ColorMap");
@@ -311,33 +321,33 @@ namespace Tenebrous.EditorEnhancements
 
 		private static void SaveSettings()
 		{
-			EditorPrefs.SetBool("TeneProjectWindow_All", _setting_showAllExtensions);
+			EditorPrefs.SetBool( "TeneProjectWindow_All", _setting_showAllExtensions );
 			EditorPrefs.GetBool( "TeneProjectWindow_PreviewOnHover", _setting_showHoverPreview );
 
 			string colormap = "";
-			foreach (KeyValuePair<string, Color> entry in _colorMap)
-				colormap += entry.Key + ":" + Common.ColorToString(entry.Value) + "|";
+			foreach( KeyValuePair<string, Color> entry in _colorMap )
+				colormap += entry.Key + ":" + Common.ColorToString( entry.Value ) + "|";
 
-			Common.SetLongPref("TeneProjectWindow_ColorMap", colormap);
+			Common.SetLongPref( "TeneProjectWindow_ColorMap", colormap );
 		}
 
 	}
 
 	public class ProjectWindowExtensionsClass : AssetPostprocessor
 	{
-		private static void OnPostprocessAllAssets(string[] pImported, string[] pDeleted, string[] pMoved, string[] pMoveFrom)
+		private static void OnPostprocessAllAssets( string[] pImported, string[] pDeleted, string[] pMoved, string[] pMoveFrom )
 		{
-			foreach (string file in pImported)
-				TeneProjectWindow.ClearCache(file);
+			foreach( string file in pImported )
+				TeneProjectWindow.ClearCache( file );
 
-			foreach (string file in pDeleted)
-				TeneProjectWindow.ClearCache(file);
+			foreach( string file in pDeleted )
+				TeneProjectWindow.ClearCache( file );
 
-			foreach (string file in pMoved)
-				TeneProjectWindow.ClearCache(file);
+			foreach( string file in pMoved )
+				TeneProjectWindow.ClearCache( file );
 
-			foreach (string file in pMoveFrom)
-				TeneProjectWindow.ClearCache(file);
+			foreach( string file in pMoveFrom )
+				TeneProjectWindow.ClearCache( file );
 		}
 	}
 }
