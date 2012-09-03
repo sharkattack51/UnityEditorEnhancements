@@ -105,12 +105,19 @@ public class ProjectWindowPreview : EditorWindow
 
 static class ProjectWindowPreviewInfo
 {
-	public static string GetPreviewInfo( this Object pObject )
+	public static string GetPreviewInfo( this object pObject )
 	{
 		if( pObject is AudioClip )
 			return ( (AudioClip)pObject ).GetPreviewInfo();
 		else if( pObject is Texture2D )
 			return ( (Texture2D)pObject ).GetPreviewInfo();
+		else if( pObject is Material )
+			return ( (Material)pObject ).GetPreviewInfo();
+		else if( pObject is MonoScript )
+			return ( (MonoScript)pObject ).GetPreviewInfo();
+		else if( pObject is Shader )
+			return ( (Shader)pObject ).GetPreviewInfo();
+
 		return "";
 	}
 
@@ -139,8 +146,65 @@ static class ProjectWindowPreviewInfo
 		string info = "";
 
 		info = pObject.format.ToString() + "\n"
-		       + pObject.width + " x " + pObject.height;
+			   + pObject.width + "x" + pObject.height;
 
-		return( info );
-	}	
+		return ( info );
+	}
+
+	public static string GetPreviewInfo( this Material pObject )
+	{
+		string info = "";
+
+		info = pObject.shader.name;
+
+		foreach( Object obj in EditorUtility.CollectDependencies( new Object[] { pObject  } ) )
+			if( obj is Texture )
+				info += "\n - " + obj.name;
+
+		return ( info );
+	}
+
+	public static string GetPreviewInfo( this MonoScript pObject )
+	{
+		string info = "";
+		
+		Type assetclass = pObject.GetClass();
+		if( assetclass != null )
+			info += assetclass.BaseType.ToString() + "\n -> " + assetclass.ToString();
+		else
+			info += "(multiple classes)";
+
+		//string scriptPath = Common.ProjectPath + Path.DirectorySeparatorChar + AssetDatabase.GetAssetPath(pObject);
+
+		//string assembly = "";
+
+		//if( scriptPath.EndsWith( ".cs" ) )
+		//    assembly = "Assembly-CSharp.dll";
+		//else if( scriptPath.EndsWith( ".js" ) )
+		//    assembly = "Assembly-UnityScript.dll";
+		//else if( scriptPath.EndsWith( ".boo" ) )
+		//    assembly = "Assembly-Boo.dll";
+
+		//assembly = Common.ProjectPath + Path.DirectorySeparatorChar
+		//         + "Library" + Path.DirectorySeparatorChar
+		//         + "ScriptAssemblies" + Path.DirectorySeparatorChar
+		//         + assembly;
+
+		//DateTime assemblyTime = (new FileInfo(assembly)).LastWriteTime;
+		//DateTime scriptTime = (new FileInfo(scriptPath)).LastWriteTime;
+
+		//if( assemblyTime < scriptTime )
+		//    info = "COMPILE ERROR";
+
+		return ( info );
+	}
+
+	public static string GetPreviewInfo( this Shader pObject )
+	{
+		string info = "";
+
+		info += pObject.renderQueue;
+
+		return ( info );
+	}
 }

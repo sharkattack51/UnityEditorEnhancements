@@ -22,7 +22,7 @@
  * Latest version: http://hg.tenebrous.co.uk/unityeditorenhancements
 */
 
-using System;
+using System.IO;
 using UnityEngine;
 using UnityEditor;
 
@@ -32,6 +32,27 @@ namespace Tenebrous.EditorEnhancements
 	{
 		private static string _lastBackgroundColourString;
 		private static Color _lastBackgroundColour;
+		private static string _basePath;
+
+		public static string BasePath
+		{
+			get
+			{
+				if( _basePath == null )
+					_basePath = Application.dataPath.Replace( Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar );
+
+				return ( _basePath );
+			}
+		}
+
+		public static string ProjectPath
+		{
+			get
+			{
+				string basePath = BasePath;
+				return ( basePath.Substring(0, basePath.Length-7) );
+			}
+		}
 
 		public static Color DefaultBackgroundColor
 		{
@@ -146,8 +167,8 @@ namespace Tenebrous.EditorEnhancements
 			UnityEngine.Object[] objectList = Resources.FindObjectsOfTypeAll( typeof( EditorWindow ) );
 
 			foreach( UnityEngine.Object obj in objectList )
-				if( obj.GetType().ToString() == pName )
-					return ( (EditorWindow)obj );
+				if (obj.GetType().ToString() == pName)
+					return ((EditorWindow) obj);
 
 			return ( null );
 		}

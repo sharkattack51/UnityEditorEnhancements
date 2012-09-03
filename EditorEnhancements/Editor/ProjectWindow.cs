@@ -22,10 +22,12 @@
  * Latest version: http://hg.tenebrous.co.uk/unityeditorenhancements
 */
 
+using System;
 using System.IO;
 using UnityEngine;
 using UnityEditor;
 using System.Collections.Generic;
+using Object = UnityEngine.Object;
 
 namespace Tenebrous.EditorEnhancements
 {
@@ -34,7 +36,8 @@ namespace Tenebrous.EditorEnhancements
 	{
 		private static Dictionary<string, Color> _colorMap;
 		private static Dictionary<string, int> _fileCount = new Dictionary<string, int>();
-		private static string _basePath;
+		private static Dictionary<string, string> _tooltips = new Dictionary<string, string>();
+		//private static Dictionary<string, string> _specialPaths = new Dictionary<string, string>();
 
 		private static bool _setting_showAllExtensions;
 		private static bool _setting_showHoverPreview;
@@ -47,8 +50,6 @@ namespace Tenebrous.EditorEnhancements
 		{
 			EditorApplication.projectWindowItemOnGUI += Draw;
 			EditorApplication.update += Update;
-
-			_basePath = Application.dataPath.Replace( Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar );
 
 			_colorMap = new Dictionary<string, Color>()
 			{
@@ -65,6 +66,11 @@ namespace Tenebrous.EditorEnhancements
 				{"mp3", new Color(0.8f, 0.4f, 1.0f)},
 				{"ogg", new Color(0.8f, 0.4f, 1.0f)},
 			};
+
+			//_specialPaths = new Dictionary<string, string>()
+			//{
+			//    {"WebPlayerTemplates", "WebPlayerTemplates - excluded from build"}
+			//};
 
 			ReadSettings();
 		}
@@ -136,17 +142,21 @@ namespace Tenebrous.EditorEnhancements
 
 		private static void Draw( string pGUID, Rect pDrawingRect )
 		{
-			string path = AssetDatabase.GUIDToAssetPath( pGUID );
-			string extension = Path.GetExtension( path );
-			string filename = Path.GetFileNameWithoutExtension( path );
+			string assetpath = AssetDatabase.GUIDToAssetPath( pGUID );
+			string extension = Path.GetExtension( assetpath );
+			string filename = Path.GetFileNameWithoutExtension( assetpath );
 
 			bool icons = pDrawingRect.height > 20;
 			GUIStyle labelstyle = icons ? EditorStyles.miniLabel : EditorStyles.label;
 
-			if( path.Length == 0 )
+			if( assetpath.Length == 0 )
 				return;
 
-			path = Path.GetDirectoryName( path );
+			string path = Path.GetDirectoryName( assetpath );
+
+			string tooltip = GetTooltip( assetpath );
+			if( tooltip.Length > 0 )
+				GUI.Label( pDrawingRect, new GUIContent( " ", tooltip ) );
 
 			if( extension.Length == 0 || filename.Length == 0 )
 				return;
@@ -158,36 +168,10 @@ namespace Tenebrous.EditorEnhancements
 			if( pDrawingRect.Contains( Event.current.mousePosition ) )
 				_currentGUID = pGUID;
 
-			string searchpath = _basePath +
-								path.Substring( 6 ).Replace( Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar );
-
 			if( !_setting_showAllExtensions )
-			{
-				int files = 0;
-				string pathnoext = path + Path.AltDirectorySeparatorChar + filename;
-
-				if( !_fileCount.TryGetValue( pathnoext, out files ) )
-				{
-					files = 1;
-					string[] otherFilenames = Directory.GetFiles( searchpath, filename + ".*" );
-					foreach( string otherFilename in otherFilenames )
-					{
-						if( otherFilename.EndsWith( filename + extension ) )
-							continue;
-
-						if( otherFilename.EndsWith( ".meta" ) )
-							continue;
-
-						files++;
-						break;
-					}
-
-					_fileCount[pathnoext] = files;
-				}
-
-				if( files <= 1 )
+				if( GetFileCount( extension, filename, path ) <= 1 )
 					return;
-			}
+
 
 			extension = extension.Substring( 1 );
 			string drawextension = extension;
@@ -237,10 +221,63 @@ namespace Tenebrous.EditorEnhancements
 			GUI.color = color;
 		}
 
+		private static string GetTooltip( string assetpath )
+		{
+			string tooltip;
+
+			if( _tooltips.TryGetValue( assetpath, out tooltip ) )
+				return( tooltip );
+
+			Object asset = AssetDatabase.LoadAssetAtPath( assetpath, typeof( Object ) );
+
+			tooltip = asset.GetPreviewInfo();
+			while( tooltip.StartsWith( "\n" ) )
+				tooltip = tooltip.Substring("\n".Length);
+
+			//foreach( KeyValuePair<string,string> kvp in _specialPaths )
+			//    if( System.Text.RegularExpressions.Regex.IsMatch(assetpath,kvp.Key) )
+			//        tooltip += "\n" + kvp.Value;
+
+			_tooltips[assetpath] = tooltip;
+			
+			return tooltip;
+		}
+
+		private static int GetFileCount( string extension, string filename, string path )
+		{
+			string searchpath = Common.BasePath +
+								path.Substring( 6 ).Replace( Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar );
+
+			int files = 0;
+			string pathnoext = path + Path.AltDirectorySeparatorChar + filename;
+
+			if( !_fileCount.TryGetValue( pathnoext, out files ) )
+			{
+				files = 1;
+				string[] otherFilenames = Directory.GetFiles( searchpath, filename + ".*" );
+				foreach( string otherFilename in otherFilenames )
+				{
+					if( otherFilename.EndsWith( filename + extension ) )
+						continue;
+
+					if( otherFilename.EndsWith( ".meta" ) )
+						continue;
+
+					files++;
+					break;
+				}
+
+				_fileCount[pathnoext] = files;
+			}
+			return files;
+		}
+
 		public static void ClearCache( string sAsset )
 		{
 			_fileCount.Remove( Path.GetDirectoryName( sAsset ) + Path.AltDirectorySeparatorChar +
-							  Path.GetFileNameWithoutExtension( sAsset ) );
+							   Path.GetFileNameWithoutExtension( sAsset ) );
+
+			_tooltips.Remove( sAsset );
 		}
 
 
@@ -330,7 +367,6 @@ namespace Tenebrous.EditorEnhancements
 
 			Common.SetLongPref( "TeneProjectWindow_ColorMap", colormap );
 		}
-
 	}
 
 	public class ProjectWindowExtensionsClass : AssetPostprocessor
