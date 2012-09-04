@@ -46,6 +46,8 @@ namespace Tenebrous.EditorEnhancements
 		private static string _currentGUID;
 		private static int _updateThrottle;
 
+		private static Vector2 _mousePosition;
+
 		static TeneProjectWindow()
 		{
 			EditorApplication.projectWindowItemOnGUI += Draw;
@@ -102,18 +104,14 @@ namespace Tenebrous.EditorEnhancements
 					_previewWindow.Repaint();
 
 					Rect projectWindowPos = Common.ProjectWindow.position;
-					Rect newPos = new Rect( projectWindowPos.x - 210, projectWindowPos.y, 200, 200 );
+					Rect newPos = new Rect( projectWindowPos.x - 210, _mousePosition.y - 90, 200, 200 );
 
-					_previewWindow.position = newPos;
 					_previewWindow.GUID = _lastGUID;
-
-					newPos = _previewWindow.position;
 
 					if( newPos.x < 0 )
 						newPos.x = projectWindowPos.x + projectWindowPos.width;
 
-					if( newPos.y < 0 )
-						newPos.y = 0;
+					newPos.y = Mathf.Clamp( newPos.y, 0, Screen.currentResolution.height - 250 );
 
 					_previewWindow.position = newPos;
 
@@ -161,6 +159,8 @@ namespace Tenebrous.EditorEnhancements
 			if( extension.Length == 0 || filename.Length == 0 )
 				return;
 
+			_mousePosition = new Vector2(Event.current.mousePosition.x + Common.ProjectWindow.position.x, Event.current.mousePosition.y + Common.ProjectWindow.position.y );
+
 #if UNITY_4_0
 			// ignore scrollbar width in Unity 4b7
 			if( Event.current.mousePosition.x < pDrawingRect.width - 16 )
@@ -171,7 +171,6 @@ namespace Tenebrous.EditorEnhancements
 			if( !_setting_showAllExtensions )
 				if( GetFileCount( extension, filename, path ) <= 1 )
 					return;
-
 
 			extension = extension.Substring( 1 );
 			string drawextension = extension;
