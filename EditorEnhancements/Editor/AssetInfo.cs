@@ -186,9 +186,9 @@ static class AssetInfo
 		string info = "";
 
 		if( pObject.orthographic )
-			info += "Orthographic [" + pObject.orthographicSize + "]";
+			info += "Orthographic";
 		else
-			info += "Perspective [" + pObject.fov + "]";
+			info += "Perspective";
 
 		return ( info );
 	}
