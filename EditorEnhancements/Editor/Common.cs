@@ -54,6 +54,18 @@ namespace Tenebrous.EditorEnhancements
 			}
 		}
 
+		public static string TempRecompilationList
+		{
+			get
+			{
+				return ProjectPath 
+					+ Path.DirectorySeparatorChar 
+					+ "Temp" 
+					+ Path.DirectorySeparatorChar 
+					+ "tene_recompile.txt";
+			}
+		}
+
 		public static Color DefaultBackgroundColor
 		{
 			get

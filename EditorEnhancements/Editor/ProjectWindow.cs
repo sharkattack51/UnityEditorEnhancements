@@ -75,9 +75,24 @@ namespace Tenebrous.EditorEnhancements
 			//};
 
 			ReadSettings();
+
+			if( File.Exists( Common.TempRecompilationList ) )
+			{
+				CheckScriptInfo( File.ReadAllText( Common.TempRecompilationList ) );
+				File.Delete( Common.TempRecompilationList );
+			}
 		}
 
-		private static ProjectWindowPreview _previewWindow;
+		private static void CheckScriptInfo( string sLines )
+		{
+			string[] scripts = sLines.Split(new char[] {'\n'} ,StringSplitOptions.RemoveEmptyEntries);
+			foreach( string script in scripts )
+			{
+				//Debug.Log(script);
+			}
+		}
+		
+		private static TeneEnhPreviewWindow _window;
 		private static void Update()
 		{
 			if( !_setting_showHoverPreview )
@@ -90,41 +105,11 @@ namespace Tenebrous.EditorEnhancements
 			{
 				_lastGUID = _currentGUID;
 
-				if( _lastGUID != null )
-				{
-					string path = AssetDatabase.GUIDToAssetPath( _lastGUID );
-					object _asset = AssetDatabase.LoadAssetAtPath( path, typeof( object ) );
-
-					if( _asset is MonoScript || _asset is Shader || _asset.GetType().ToString() == "UnityEngine.Object" )
-						return;
-
-					if( _previewWindow == null )
-						_previewWindow = EditorWindow.GetWindow<ProjectWindowPreview>( true );
-
-					_previewWindow.Repaint();
-
-					Rect projectWindowPos = Common.ProjectWindow.position;
-					Rect newPos = new Rect( projectWindowPos.x - 210, _mousePosition.y - 90, 200, 200 );
-
-					_previewWindow.GUID = _lastGUID;
-
-					if( newPos.x < 0 )
-						newPos.x = projectWindowPos.x + projectWindowPos.width;
-
-					newPos.y = Mathf.Clamp( newPos.y, 0, Screen.currentResolution.height - 250 );
-
-					_previewWindow.position = newPos;
-
-					Common.ProjectWindow.Focus();
-				}
-				else
-				{
-					if( _previewWindow != null )
-					{
-						_previewWindow.Close();
-						_previewWindow = null;
-					}
-				}
+				TeneEnhPreviewWindow.Update(
+					Common.ProjectWindow.position, 
+					_mousePosition,
+					pGUID : _currentGUID
+				);
 			}
 			else
 			{
@@ -140,6 +125,8 @@ namespace Tenebrous.EditorEnhancements
 
 		private static void Draw( string pGUID, Rect pDrawingRect )
 		{
+			// called per-line in the project window
+
 			string assetpath = AssetDatabase.GUIDToAssetPath( pGUID );
 			string extension = Path.GetExtension( assetpath );
 			string filename = Path.GetFileNameWithoutExtension( assetpath );
@@ -372,8 +359,18 @@ namespace Tenebrous.EditorEnhancements
 	{
 		private static void OnPostprocessAllAssets( string[] pImported, string[] pDeleted, string[] pMoved, string[] pMoveFrom )
 		{
+			string compilationList = "";
 			foreach( string file in pImported )
+			{
+				string lower = file.ToLower();
+				if( lower.EndsWith( ".cs" ) || lower.EndsWith( ".boo" ) || lower.EndsWith( ".js" ) )
+					compilationList += file + "\n";
+				
 				TeneProjectWindow.ClearCache( file );
+			}
+
+			if( compilationList.Length > 0 )
+				File.WriteAllText( Common.TempRecompilationList, compilationList );
 
 			foreach( string file in pDeleted )
 				TeneProjectWindow.ClearCache( file );

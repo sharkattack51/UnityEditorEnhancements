@@ -38,29 +38,74 @@ namespace Tenebrous.EditorEnhancements
 		private static bool _showAll;
 		private static int _shownLayers;
 
-		private static Camera _sceneCam;
+		private static bool _setting_showHoverPreview;
+
+		private static Object _hoverObject;
+		private static Object _lastHoverObject;
+
+		private static int _updateThrottle;
+		private static Vector2 _mousePosition;
 
 		static TeneHierarchyWindow()
 		{
 			EditorApplication.hierarchyWindowItemOnGUI += Draw;
+			EditorApplication.update += Update;
 			SceneView.onSceneGUIDelegate += Updated;
 			ReadSettings();
 		}
 
+		private static TeneEnhPreviewWindow _window;
+		private static void Update()
+		{
+			if( !_setting_showHoverPreview )
+				return;
+
+			if( _lastHoverObject == null && _hoverObject == null )
+				return;
+
+			if( _lastHoverObject != _hoverObject )
+			{
+				// don't currently support plain old gameobjects
+				if( _hoverObject is GameObject )
+					if( PrefabUtility.GetPrefabParent( _hoverObject ) == null )
+						_hoverObject = null;
+			}
+
+			if( _lastHoverObject != _hoverObject )
+			{
+				_lastHoverObject = _hoverObject;
+
+				TeneEnhPreviewWindow.Update(
+					Common.HierarchyWindow.position,
+					_mousePosition,
+					pAsset: _hoverObject
+				);
+			}
+			else
+			{
+				_updateThrottle++;
+				if( _updateThrottle > 20 )
+				{
+					_hoverObject = null;
+					Common.HierarchyWindow.Repaint();
+					_updateThrottle = 0;
+				}
+			}
+		}
+
 		static void Updated( SceneView pScene )
 		{
+			// triggered when the user changes anything
+			// e.g. manually enables/disables components, etc
+
 			if( Event.current.type == EventType.Repaint )
-			{
-				if( _sceneCam == null )
-					if( SceneView.GetAllSceneCameras().Length > 0 )
-						_sceneCam = SceneView.GetAllSceneCameras()[0]; 
-				
 				Common.HierarchyWindow.Repaint();
-			}
 		}
 
 		private static void Draw( int pInstanceID, Rect pDrawingRect )
 		{
+			// called per-line in the hierarchy window
+
 			GameObject gameObject = EditorUtility.InstanceIDToObject( pInstanceID ) as GameObject;
 			if( gameObject == null )
 				return;
@@ -70,7 +115,7 @@ namespace Tenebrous.EditorEnhancements
 
 			Color originalColor = GUI.color;
 
-			if( _sceneCam != null && ( ( 1 << gameObject.layer ) & _sceneCam.cullingMask) == 0 )
+			if( (( 1 << gameObject.layer ) & Tools.visibleLayers) == 0 )
 			{
 				Rect labelRect = pDrawingRect;
 				labelRect.width = EditorStyles.label.CalcSize( new GUIContent( gameObject.name ) ).x;
@@ -84,6 +129,11 @@ namespace Tenebrous.EditorEnhancements
 			iconRect.y--;
 			iconRect.width = 16;
 			iconRect.height = 16;
+
+			_mousePosition = new Vector2( Event.current.mousePosition.x + Common.HierarchyWindow.position.x, Event.current.mousePosition.y + Common.HierarchyWindow.position.y );
+
+			if( pDrawingRect.Contains( Event.current.mousePosition ) )
+				_hoverObject = gameObject;
 
 			foreach( Component c in gameObject.GetComponents<Component>() )
 			{
@@ -102,10 +152,14 @@ namespace Tenebrous.EditorEnhancements
 					GUI.color = new Color( 1.0f, 0.35f, 0.35f, 1.0f );
 					GUI.Label( rectX, new GUIContent( "X", "Missing Script" ), EditorStyles.boldLabel );
 					iconRect.x -= 9;
+
+					if( rectX.Contains( Event.current.mousePosition ) )
+						_hoverObject = null;
+
 					continue;
 				}
 
-				tooltip = c.GetType().ToString().Replace( "UnityEngine.", "" );
+				tooltip = c.GetPreviewInfo();
 				if( c is MonoBehaviour )
 				{
 					MonoScript ms = MonoScript.FromMonoBehaviour( c as MonoBehaviour );
@@ -117,6 +171,9 @@ namespace Tenebrous.EditorEnhancements
 
 				if( tex != null )
 				{
+					if( iconRect.Contains( Event.current.mousePosition ) )
+						_hoverObject = c;
+
 					GUI.DrawTexture( iconRect, tex, ScaleMode.ScaleToFit );
 					if( GUI.Button( iconRect, new GUIContent( "", tooltip ), EditorStyles.label ) )
 					{
@@ -175,6 +232,8 @@ namespace Tenebrous.EditorEnhancements
 		[PreferenceItem( "Hierarchy Pane" )]
 		public static void DrawPrefs()
 		{
+			_setting_showHoverPreview = EditorGUILayout.Toggle( "Show asset preview on hover", _setting_showHoverPreview );
+
 			if( GUI.changed )
 			{
 				SaveSettings();
@@ -184,10 +243,12 @@ namespace Tenebrous.EditorEnhancements
 
 		private static void ReadSettings()
 		{
+			_setting_showHoverPreview = EditorPrefs.GetBool( "TeneHierarchyWindow_PreviewOnHover", true );
 		}
 
 		private static void SaveSettings()
 		{
+			EditorPrefs.GetBool( "TeneHierarchyWindow_PreviewOnHover", _setting_showHoverPreview );
 		}
 	}
 }
