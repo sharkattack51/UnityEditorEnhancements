@@ -70,7 +70,10 @@ public class TeneEnhPreviewWindow : EditorWindow
 		// include specific things
 		if( pAsset is Camera )
 			return (true);
-		
+
+		if( pAsset is GameObject )
+			return ((GameObject) pAsset).HasAnyRenderers();
+
 		// exclude specific things
 		return(
 			pAsset != null 
@@ -132,6 +135,9 @@ public class TeneEnhPreviewWindow : EditorWindow
 		_timeStart = EditorApplication.timeSinceStartup;
 
 		_window.Repaint();
+
+		if( EditorWindow.mouseOverWindow != null )
+			EditorWindow.mouseOverWindow.Focus();
 	}
 
 	void Update()

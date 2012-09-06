@@ -46,11 +46,14 @@ namespace Tenebrous.EditorEnhancements
 		private static int _updateThrottle;
 		private static Vector2 _mousePosition;
 
+		private static Dictionary<Object, string> _tooltips = new Dictionary<Object, string>();
+
 		static TeneHierarchyWindow()
 		{
 			EditorApplication.hierarchyWindowItemOnGUI += Draw;
 			EditorApplication.update += Update;
 			SceneView.onSceneGUIDelegate += Updated;
+			EditorApplication.hierarchyWindowChanged += ClearTooltipCache;
 			ReadSettings();
 		}
 
@@ -124,6 +127,10 @@ namespace Tenebrous.EditorEnhancements
 				GUI.Label( labelRect, "".PadRight( gameObject.name.Length, '_' ) );
 			}
 
+			string tooltip = GetTooltip(gameObject);
+			if( tooltip.Length > 0 )
+				GUI.Label(pDrawingRect,new GUIContent("",tooltip));
+
 			Rect iconRect = pDrawingRect;
 			iconRect.x = pDrawingRect.x + pDrawingRect.width - 16;
 			iconRect.y--;
@@ -140,7 +147,7 @@ namespace Tenebrous.EditorEnhancements
 				if( c is Transform )
 					continue;
 
-				string tooltip = "";
+				tooltip = "";
 
 				GUI.color = c.GetEnabled() ? Color.white : new Color( 0.5f, 0.5f, 0.5f, 0.5f );
 
@@ -159,7 +166,7 @@ namespace Tenebrous.EditorEnhancements
 					continue;
 				}
 
-				tooltip = c.GetPreviewInfo();
+				tooltip = GetTooltip(c);
 				if( c is MonoBehaviour )
 				{
 					MonoScript ms = MonoScript.FromMonoBehaviour( c as MonoBehaviour );
@@ -178,7 +185,6 @@ namespace Tenebrous.EditorEnhancements
 					if( GUI.Button( iconRect, new GUIContent( "", tooltip ), EditorStyles.label ) )
 					{
 						c.SetEnabled( !c.GetEnabled() );
-						hierarchyWindow.Focus();
 						Common.HierarchyWindow.Repaint();
 						return;
 					}
@@ -197,6 +203,24 @@ namespace Tenebrous.EditorEnhancements
 			//        -1, null, gameObject
 			//    );
 			//}
+		}
+
+		private static string GetTooltip( UnityEngine.Object pObject )
+		{
+			string tooltip;
+
+			if( _tooltips.TryGetValue( pObject, out tooltip ) )
+				return ( tooltip );
+
+			tooltip = pObject.GetPreviewInfo();
+
+			_tooltips[pObject] = tooltip;
+
+			return tooltip;
+		}
+		private static void ClearTooltipCache()
+		{
+			_tooltips.Clear();
 		}
 
 		public static bool GetEnabled( this Component pComponent )

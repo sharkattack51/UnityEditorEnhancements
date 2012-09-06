@@ -23,6 +23,8 @@ static class AssetInfo
 			info = ( (MeshFilter)pObject ).GetPreviewInfo();
 		else if( pObject is MeshRenderer )
 			info = ( (MeshRenderer)pObject ).GetPreviewInfo();
+		else if( pObject is GameObject )
+			info = ( (GameObject)pObject ).GetPreviewInfo();
 		else if( pObject is MonoScript )
 		{
 			typename = "";
@@ -147,8 +149,19 @@ static class AssetInfo
 		string info = "";
 
 		MonoScript ms = MonoScript.FromMonoBehaviour( pObject );
-		
+
 		info += ms.name;
+
+		return ( info );
+	}
+
+	public static string GetPreviewInfo( this GameObject pObject )
+	{
+		string info = "";
+
+		GameObject parent = PrefabUtility.GetPrefabParent(pObject) as GameObject;
+		if( parent != null )
+			info += AssetDatabase.GetAssetPath(parent);
 
 		return ( info );
 	}
@@ -209,5 +222,19 @@ static class AssetInfo
 		info += pObject.reverbPreset;
 
 		return ( info );
+	}
+
+	// other extensions
+
+	public static bool HasAnyRenderers( this GameObject pObject )
+	{
+		if( pObject.renderer != null )
+			return (true);
+
+		foreach( Transform child in pObject.transform )
+			if( child.gameObject.HasAnyRenderers() )
+				return (true);
+
+		return false;
 	}
 }
