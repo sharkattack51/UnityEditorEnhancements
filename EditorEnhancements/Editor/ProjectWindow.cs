@@ -40,7 +40,11 @@ namespace Tenebrous.EditorEnhancements
 		//private static Dictionary<string, string> _specialPaths = new Dictionary<string, string>();
 
 		private static bool _setting_showAllExtensions;
+
 		private static bool _setting_showHoverPreview;
+		private static bool _setting_showHoverPreviewShift;
+		private static bool _setting_showHoverTooltip;
+		private static bool _setting_showHoverTooltipShift;
 
 		private static string _lastGUID;
 		private static string _currentGUID;
@@ -53,21 +57,42 @@ namespace Tenebrous.EditorEnhancements
 			EditorApplication.projectWindowItemOnGUI += Draw;
 			EditorApplication.update += Update;
 
-			_colorMap = new Dictionary<string, Color>()
-			{
-				{"png", new Color(0.8f, 0.8f, 1.0f)},
-				{"psd", new Color(0.5f, 0.8f, 1.0f)},
+			if( EditorGUIUtility.isProSkin )
+				_colorMap = new Dictionary<string, Color>()
+				{
+					{"png", new Color(0.8f, 0.8f, 1.0f)},
+					{"psd", new Color(0.5f, 0.8f, 1.0f)},
+					{"tga", new Color(0.8f, 0.5f, 1.0f)},
 
-				{"cs", new Color(0.5f, 1.0f, 0.5f)},
-				{"js", new Color(0.8f, 1.0f, 0.8f)},
+					{"cs",  new Color(0.5f, 1.0f, 0.5f)},
+					{"js",  new Color(0.8f, 1.0f, 0.3f)},
+					{"boo", new Color(0.3f, 1.0f, 0.8f)},
 
-				{"mat", new Color(1.0f, 0.8f, 0.8f)},
-				{"shader", new Color(1.0f, 0.5f, 0.5f)},
+					{"mat", new Color(1.0f, 0.8f, 0.8f)},
+					{"shader", new Color(1.0f, 0.5f, 0.5f)},
 
-				{"wav", new Color(0.8f, 0.4f, 1.0f)},
-				{"mp3", new Color(0.8f, 0.4f, 1.0f)},
-				{"ogg", new Color(0.8f, 0.4f, 1.0f)},
-			};
+					{"wav", new Color(0.8f, 0.4f, 1.0f)},
+					{"mp3", new Color(0.8f, 0.4f, 1.0f)},
+					{"ogg", new Color(0.8f, 0.4f, 1.0f)},
+				};
+			else
+				_colorMap = new Dictionary<string, Color>()
+				{
+					{"png", new Color(0.0f, 0.0f, 1.0f)},
+					{"psd", new Color(0.7f, 0.2f, 1.0f)},
+					{"tga", new Color(0.2f, 0.7f, 1.0f)},
+
+					{"cs",  new Color(0.0f, 0.5f, 0.0f)},
+					{"js",  new Color(0.5f, 0.5f, 0.0f)},
+					{"boo", new Color(0.0f, 0.5f, 0.5f)},
+
+					{"mat", new Color(0.2f, 0.8f, 0.8f)},
+					{"shader", new Color(1.0f, 0.5f, 0.5f)},
+
+					{"wav", new Color(0.8f, 0.4f, 1.0f)},
+					{"mp3", new Color(0.8f, 0.4f, 1.0f)},
+					{"ogg", new Color(0.8f, 0.4f, 1.0f)},
+				};
 
 			//_specialPaths = new Dictionary<string, string>()
 			//{
@@ -132,16 +157,21 @@ namespace Tenebrous.EditorEnhancements
 			string filename = Path.GetFileNameWithoutExtension( assetpath );
 
 			bool icons = pDrawingRect.height > 20;
-			GUIStyle labelstyle = icons ? EditorStyles.miniLabel : EditorStyles.label;
 
 			if( assetpath.Length == 0 )
 				return;
 
 			string path = Path.GetDirectoryName( assetpath );
 
-			string tooltip = GetTooltip( assetpath );
-			if( tooltip.Length > 0 )
-				GUI.Label( pDrawingRect, new GUIContent( " ", tooltip ) );
+			bool doPreview = _setting_showHoverPreview && ( !_setting_showHoverPreviewShift || Event.current.modifiers == EventModifiers.Shift );
+			bool doTooltip = _setting_showHoverTooltip && ( !_setting_showHoverTooltipShift || Event.current.modifiers == EventModifiers.Shift );
+
+			if( doTooltip )
+			{
+				string tooltip = GetTooltip(assetpath);
+				if (tooltip.Length > 0)
+					GUI.Label(pDrawingRect, new GUIContent(" ", tooltip));
+			}
 
 			if( extension.Length == 0 || filename.Length == 0 )
 				return;
@@ -152,8 +182,9 @@ namespace Tenebrous.EditorEnhancements
 			// ignore scrollbar width in Unity 4b7
 			if( Event.current.mousePosition.x < pDrawingRect.width - 16 )
 #endif
-			if( pDrawingRect.Contains( Event.current.mousePosition ) )
-				_currentGUID = pGUID;
+			if( doPreview )
+				if( pDrawingRect.Contains( Event.current.mousePosition ) )
+					_currentGUID = pGUID;
 
 			if( !_setting_showAllExtensions )
 				if( GetFileCount( extension, filename, path ) <= 1 )
@@ -161,6 +192,12 @@ namespace Tenebrous.EditorEnhancements
 
 			extension = extension.Substring( 1 );
 			string drawextension = extension;
+
+			Color labelColor;
+			if( !_colorMap.TryGetValue( extension.ToLower(), out labelColor ) )
+				labelColor = Color.grey;
+
+			GUIStyle labelstyle = icons ? Common.ColorMiniLabel(labelColor) : Common.ColorLabel(labelColor);
 
 			Rect newRect = pDrawingRect;
 			Vector2 labelSize = labelstyle.CalcSize( new GUIContent( drawextension ) );
@@ -191,18 +228,14 @@ namespace Tenebrous.EditorEnhancements
 			}
 
 			Color color = GUI.color;
-			Color newColor;
 
 			// fill background
-			newColor = Common.DefaultBackgroundColor;
-			newColor.a = 1;
-			GUI.color = newColor;
+			Color bgColor = Common.DefaultBackgroundColor;
+			bgColor.a = 1;
+			GUI.color = bgColor;
 			GUI.DrawTexture( newRect, EditorGUIUtility.whiteTexture );
 
-			if( !_colorMap.TryGetValue( extension.ToLower(), out newColor ) )
-				newColor = Color.grey;
-
-			GUI.color = newColor;
+			GUI.color = labelColor;
 			GUI.Label( newRect, drawextension, labelstyle );
 			GUI.color = color;
 		}
@@ -277,7 +310,14 @@ namespace Tenebrous.EditorEnhancements
 		public static void DrawPrefs()
 		{
 			_setting_showAllExtensions = EditorGUILayout.Toggle( "Show all", _setting_showAllExtensions );
+
 			_setting_showHoverPreview = EditorGUILayout.Toggle( "Show asset preview on hover", _setting_showHoverPreview );
+			if( _setting_showHoverPreview )
+				_setting_showHoverPreviewShift = EditorGUILayout.Toggle( "         only when holding shift", _setting_showHoverPreviewShift );
+
+			_setting_showHoverTooltip = EditorGUILayout.Toggle( "Show asset tooltip on hover", _setting_showHoverTooltip );
+			if( _setting_showHoverTooltip )
+				_setting_showHoverTooltipShift = EditorGUILayout.Toggle( "         only when holding shift", _setting_showHoverTooltipShift );
 
 			/*
 						string removeExtension = null;
@@ -337,21 +377,29 @@ namespace Tenebrous.EditorEnhancements
 			//string colourinfo;
 
 			_setting_showAllExtensions = EditorPrefs.GetBool( "TeneProjectWindow_All", true );
-			_setting_showHoverPreview = EditorPrefs.GetBool( "TeneProjectWindow_PreviewOnHover", true );
 
 			//string colormap = Common.GetLongPref("TeneProjectWindow_ColorMap");
+			
+			_setting_showHoverPreview = EditorPrefs.GetBool( "TeneProjectWindow_PreviewOnHover", true );
+			_setting_showHoverPreviewShift = EditorPrefs.GetBool( "TeneProjectWindow_PreviewOnHoverShift", false );
+			_setting_showHoverTooltip = EditorPrefs.GetBool( "TeneProjectWindow_HoverTooltip", true );
+			_setting_showHoverTooltipShift = EditorPrefs.GetBool( "TeneProjectWindow_HoverTooltipShift", false );
 		}
 
 		private static void SaveSettings()
 		{
 			EditorPrefs.SetBool( "TeneProjectWindow_All", _setting_showAllExtensions );
-			EditorPrefs.GetBool( "TeneProjectWindow_PreviewOnHover", _setting_showHoverPreview );
 
 			string colormap = "";
 			foreach( KeyValuePair<string, Color> entry in _colorMap )
 				colormap += entry.Key + ":" + Common.ColorToString( entry.Value ) + "|";
 
 			Common.SetLongPref( "TeneProjectWindow_ColorMap", colormap );
+
+			EditorPrefs.SetBool( "TeneProjectWindow_PreviewOnHover", _setting_showHoverPreview );
+			EditorPrefs.SetBool( "TeneProjectWindow_PreviewOnHoverShift", _setting_showHoverPreviewShift );
+			EditorPrefs.SetBool( "TeneProjectWindow_HoverTooltip", _setting_showHoverTooltip );
+			EditorPrefs.SetBool( "TeneProjectWindow_HoverTooltipShift", _setting_showHoverTooltipShift );
 		}
 	}
 

@@ -171,8 +171,10 @@ public class TeneEnhPreviewWindow : EditorWindow
 		pos.y = pos.height - EditorStyles.boldLabel.CalcHeight( new GUIContent( _info ), pos.width );
 		pos.height -= pos.y;
 
+		GUIStyle s = new GUIStyle( EditorStyles.boldLabel );
+		s.normal.textColor = Color.white;
 		GUI.color = Color.white;
-		EditorGUI.DropShadowLabel( pos, _info, EditorStyles.boldLabel );
+		EditorGUI.DropShadowLabel( pos, _info, s );
 	}
 
 	void ShowCamera( Rect pPos, Camera pCamera )

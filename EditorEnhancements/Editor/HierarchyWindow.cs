@@ -39,6 +39,9 @@ namespace Tenebrous.EditorEnhancements
 		private static int _shownLayers;
 
 		private static bool _setting_showHoverPreview;
+		private static bool _setting_showHoverPreviewShift;
+		private static bool _setting_showHoverTooltip;
+		private static bool _setting_showHoverTooltipShift;
 
 		private static Object _hoverObject;
 		private static Object _lastHoverObject;
@@ -60,9 +63,6 @@ namespace Tenebrous.EditorEnhancements
 		private static TeneEnhPreviewWindow _window;
 		private static void Update()
 		{
-			if( !_setting_showHoverPreview )
-				return;
-
 			if( _lastHoverObject == null && _hoverObject == null )
 				return;
 
@@ -116,6 +116,10 @@ namespace Tenebrous.EditorEnhancements
 			EditorWindow hierarchyWindow = Common.HierarchyWindow;
 			Texture tex;
 
+			bool doPreview = _setting_showHoverPreview && (!_setting_showHoverPreviewShift || Event.current.modifiers == EventModifiers.Shift);
+			bool doTooltip = _setting_showHoverTooltip && (!_setting_showHoverTooltipShift || Event.current.modifiers == EventModifiers.Shift);
+			string tooltip = "";
+
 			Color originalColor = GUI.color;
 
 			if( (( 1 << gameObject.layer ) & Tools.visibleLayers) == 0 )
@@ -127,9 +131,12 @@ namespace Tenebrous.EditorEnhancements
 				GUI.Label( labelRect, "".PadRight( gameObject.name.Length, '_' ) );
 			}
 
-			string tooltip = GetTooltip(gameObject);
-			if( tooltip.Length > 0 )
-				GUI.Label(pDrawingRect,new GUIContent("",tooltip));
+			if( doTooltip )
+			{
+				tooltip = GetTooltip(gameObject);
+				if (tooltip.Length > 0)
+					GUI.Label(pDrawingRect, new GUIContent(" ", tooltip));
+			}
 
 			Rect iconRect = pDrawingRect;
 			iconRect.x = pDrawingRect.x + pDrawingRect.width - 16;
@@ -139,15 +146,14 @@ namespace Tenebrous.EditorEnhancements
 
 			_mousePosition = new Vector2( Event.current.mousePosition.x + Common.HierarchyWindow.position.x, Event.current.mousePosition.y + Common.HierarchyWindow.position.y );
 
-			if( pDrawingRect.Contains( Event.current.mousePosition ) )
-				_hoverObject = gameObject;
+			if( doPreview )
+				if( pDrawingRect.Contains( Event.current.mousePosition ) )
+					_hoverObject = gameObject;
 
 			foreach( Component c in gameObject.GetComponents<Component>() )
 			{
 				if( c is Transform )
 					continue;
-
-				tooltip = "";
 
 				GUI.color = c.GetEnabled() ? Color.white : new Color( 0.5f, 0.5f, 0.5f, 0.5f );
 
@@ -157,7 +163,7 @@ namespace Tenebrous.EditorEnhancements
 				{
 					Rect rectX = new Rect( iconRect.x + 4, iconRect.y + 1, 14, iconRect.height );
 					GUI.color = new Color( 1.0f, 0.35f, 0.35f, 1.0f );
-					GUI.Label( rectX, new GUIContent( "X", "Missing Script" ), EditorStyles.boldLabel );
+					GUI.Label( rectX, new GUIContent( "X", "Missing Script" ), Common.ColorLabel( new Color( 1.0f, 0.35f, 0.35f, 1.0f ) ) );
 					iconRect.x -= 9;
 
 					if( rectX.Contains( Event.current.mousePosition ) )
@@ -166,7 +172,9 @@ namespace Tenebrous.EditorEnhancements
 					continue;
 				}
 
-				tooltip = GetTooltip(c);
+				if( doTooltip )
+ 					tooltip = GetTooltip(c);
+
 				if( c is MonoBehaviour )
 				{
 					MonoScript ms = MonoScript.FromMonoBehaviour( c as MonoBehaviour );
@@ -178,8 +186,9 @@ namespace Tenebrous.EditorEnhancements
 
 				if( tex != null )
 				{
-					if( iconRect.Contains( Event.current.mousePosition ) )
-						_hoverObject = c;
+					if( doPreview )
+						if( iconRect.Contains( Event.current.mousePosition ) )
+							_hoverObject = c;
 
 					GUI.DrawTexture( iconRect, tex, ScaleMode.ScaleToFit );
 					if( GUI.Button( iconRect, new GUIContent( "", tooltip ), EditorStyles.label ) )
@@ -257,6 +266,12 @@ namespace Tenebrous.EditorEnhancements
 		public static void DrawPrefs()
 		{
 			_setting_showHoverPreview = EditorGUILayout.Toggle( "Show asset preview on hover", _setting_showHoverPreview );
+			if( _setting_showHoverPreview )
+				_setting_showHoverPreviewShift = EditorGUILayout.Toggle( "         only when holding shift", _setting_showHoverPreviewShift );
+
+			_setting_showHoverTooltip = EditorGUILayout.Toggle( "Show asset tooltip on hover", _setting_showHoverTooltip );
+			if( _setting_showHoverTooltip )
+				_setting_showHoverTooltipShift = EditorGUILayout.Toggle( "         only when holding shift", _setting_showHoverTooltipShift );
 
 			if( GUI.changed )
 			{
@@ -268,11 +283,17 @@ namespace Tenebrous.EditorEnhancements
 		private static void ReadSettings()
 		{
 			_setting_showHoverPreview = EditorPrefs.GetBool( "TeneHierarchyWindow_PreviewOnHover", true );
+			_setting_showHoverPreviewShift = EditorPrefs.GetBool( "TeneHierarchyWindow_PreviewOnHoverShift", false );
+			_setting_showHoverTooltip = EditorPrefs.GetBool( "TeneHierarchyWindow_HoverTooltip", true );
+			_setting_showHoverTooltipShift = EditorPrefs.GetBool( "TeneHierarchyWindow_HoverTooltipShift", false );
 		}
 
 		private static void SaveSettings()
 		{
-			EditorPrefs.GetBool( "TeneHierarchyWindow_PreviewOnHover", _setting_showHoverPreview );
+			EditorPrefs.SetBool( "TeneHierarchyWindow_PreviewOnHover", _setting_showHoverPreview );
+			EditorPrefs.SetBool( "TeneHierarchyWindow_PreviewOnHoverShift", _setting_showHoverPreviewShift );
+			EditorPrefs.SetBool( "TeneHierarchyWindow_HoverTooltip", _setting_showHoverTooltip );
+			EditorPrefs.SetBool( "TeneHierarchyWindow_HoverTooltipShift", _setting_showHoverTooltipShift );
 		}
 	}
 }

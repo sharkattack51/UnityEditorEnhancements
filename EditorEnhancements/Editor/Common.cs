@@ -34,6 +34,29 @@ namespace Tenebrous.EditorEnhancements
 		private static Color _lastBackgroundColour;
 		private static string _basePath;
 
+		private static GUIStyle _colorLabel;
+		private static GUIStyle _colorMiniLabel;
+
+		public static GUIStyle ColorLabel( Color pColor )
+		{
+			if( _colorLabel == null )
+				_colorLabel = new GUIStyle( EditorStyles.label );
+
+			_colorLabel.normal.textColor = pColor;
+
+			return ( _colorLabel );
+		}
+	
+		public static GUIStyle ColorMiniLabel( Color pColor )
+		{
+			if( _colorMiniLabel == null )
+				_colorMiniLabel = new GUIStyle( EditorStyles.miniLabel );
+
+			_colorMiniLabel.normal.textColor = pColor;
+
+			return ( _colorMiniLabel );
+		}
+
 		public static string BasePath
 		{
 			get
