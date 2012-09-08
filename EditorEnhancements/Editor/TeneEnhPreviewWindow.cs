@@ -76,13 +76,14 @@ public class TeneEnhPreviewWindow : EditorWindow
 
 		// exclude specific things
 		return(
-			pAsset != null 
-			&& pAsset.GetType().ToString() != "UnityEngine.Object"
+			pAsset != null
 			&& !( pAsset is MonoScript )
+			&& !( pAsset is TextAsset )
 			&& !( pAsset is MonoBehaviour )
 			&& !( pAsset is Behaviour )
 			&& !( pAsset is Collider )
 			&& !( pAsset is Component )
+			&& pAsset.GetType().ToString() != "UnityEngine.Object"
 		);
 	}
 
