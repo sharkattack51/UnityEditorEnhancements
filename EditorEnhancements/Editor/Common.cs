@@ -25,6 +25,7 @@
 using System.IO;
 using UnityEngine;
 using UnityEditor;
+using System.Collections.Generic;
 
 namespace Tenebrous.EditorEnhancements
 {
@@ -76,6 +77,11 @@ namespace Tenebrous.EditorEnhancements
 				return ( basePath.Substring(0, basePath.Length-7) );
 			}
 		}
+
+//		public static bool UnityVersionAbove( string sVersion )
+//		{
+//			
+//		}
 
 		public static string TempRecompilationList
 		{
@@ -176,6 +182,41 @@ namespace Tenebrous.EditorEnhancements
 
 			while (EditorPrefs.HasKey(pName + index))
 				EditorPrefs.DeleteKey(pName + index++);
+		}
+
+		public static string FullPath( string pAssetPath )
+		{
+			return BasePath
+			       + pAssetPath.Substring( 6 ).Replace( Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar );
+		}
+
+		public static long UnityVersion(string pVersion = "")
+		{
+			long value = 0;
+			long valuePart = 0;
+
+			if( pVersion == "" )
+				pVersion = Application.unityVersion;
+
+			pVersion = pVersion.ToLower() + ".";
+
+			foreach( char c in pVersion )
+			{
+				if( c >= '0' && c <= '9' )
+					valuePart = valuePart * 10 + ( c - '0' );
+				else if( c >= 'a' && c <= 'z' )
+				{
+					value = value * 1000 + ( c - 'a' );
+					valuePart = 0;
+				}
+				else if( c == '.' )
+				{
+					value = value * 1000 + valuePart;
+					valuePart = 0;
+				}
+			}
+
+			return value;
 		}
 
 		public static Texture GetMiniThumbnail( UnityEngine.Object obj )

@@ -35,11 +35,17 @@ namespace Tenebrous.EditorEnhancements
 	public static class TeneProjectWindow
 	{
 		private static Dictionary<string, Color> _colorMap;
+
+		// caches for various things
 		private static Dictionary<string, int> _fileCount = new Dictionary<string, int>();
+		private static Dictionary<string, int> _folderFileCount = new Dictionary<string, int>();
 		private static Dictionary<string, string> _tooltips = new Dictionary<string, string>();
 		//private static Dictionary<string, string> _specialPaths = new Dictionary<string, string>();
+		private static Dictionary<string, FileAttributes> _fileAttrs = new Dictionary<string, FileAttributes>();
 
+		// settings
 		private static bool _setting_showAllExtensions;
+		private static bool _setting_showFileCount;
 
 		private static bool _setting_showHoverPreview;
 		private static bool _setting_showHoverPreviewShift;
@@ -50,7 +56,11 @@ namespace Tenebrous.EditorEnhancements
 		private static string _currentGUID;
 		private static int _updateThrottle;
 
+		// mouse position recorded during the projectWindowItemOnGUI
 		private static Vector2 _mousePosition;
+
+		// any version-specific hacks
+		private static bool _needHackScrollbarWidthForDrawing;
 
 		static TeneProjectWindow()
 		{
@@ -98,6 +108,8 @@ namespace Tenebrous.EditorEnhancements
 			//{
 			//    {"WebPlayerTemplates", "WebPlayerTemplates - excluded from build"}
 			//};
+
+			_needHackScrollbarWidthForDrawing = Common.UnityVersion() < Common.UnityVersion( "4.0.0b8" );
 
 			ReadSettings();
 
@@ -155,6 +167,7 @@ namespace Tenebrous.EditorEnhancements
 			string assetpath = AssetDatabase.GUIDToAssetPath( pGUID );
 			string extension = Path.GetExtension( assetpath );
 			string filename = Path.GetFileNameWithoutExtension( assetpath );
+			bool isFolder = false;
 
 			bool icons = pDrawingRect.height > 20;
 
@@ -173,29 +186,43 @@ namespace Tenebrous.EditorEnhancements
 					GUI.Label(pDrawingRect, new GUIContent(" ", tooltip));
 			}
 
-			if( extension.Length == 0 || filename.Length == 0 )
+			isFolder = ( GetFileAttr( assetpath ) & FileAttributes.Directory ) != 0;
+
+			if( !_setting_showFileCount && isFolder )
 				return;
 
 			_mousePosition = new Vector2(Event.current.mousePosition.x + Common.ProjectWindow.position.x, Event.current.mousePosition.y + Common.ProjectWindow.position.y );
 
 #if UNITY_4_0
-			// ignore scrollbar width in Unity 4b7
 			if( Event.current.mousePosition.x < pDrawingRect.width - 16 )
 #endif
 			if( doPreview )
 				if( pDrawingRect.Contains( Event.current.mousePosition ) )
 					_currentGUID = pGUID;
 
-			if( !_setting_showAllExtensions )
-				if( GetFileCount( extension, filename, path ) <= 1 )
+			if( !_setting_showAllExtensions && !isFolder )
+				if( GetExtensionsCount( extension, filename, path ) <= 1 )
 					return;
 
-			extension = extension.Substring( 1 );
-			string drawextension = extension;
+			Color labelColor = Color.grey;
+			string drawextension = "";
 
-			Color labelColor;
-			if( !_colorMap.TryGetValue( extension.ToLower(), out labelColor ) )
-				labelColor = Color.grey;
+			if( !isFolder )
+			{
+				extension = extension.Substring( 1 );
+				drawextension = extension;
+
+				if( !_colorMap.TryGetValue( extension.ToLower(), out labelColor ) )
+					labelColor = Color.grey;
+			}
+			else
+			{
+				labelColor = new Color(0.75f,0.75f,0.75f,1.0f);
+				int files = GetFolderFilesCount( assetpath );
+				if( files == 0 )
+					return;
+				drawextension = "(" + files + ")";
+			}
 
 			GUIStyle labelstyle = icons ? Common.ColorMiniLabel(labelColor) : Common.ColorLabel(labelColor);
 
@@ -212,32 +239,60 @@ namespace Tenebrous.EditorEnhancements
 			else
 			{
 #if UNITY_4_0
-				newRect.width += pDrawingRect.x - 16;
+				newRect.width += pDrawingRect.x - (_needHackScrollbarWidthForDrawing ? 16 : 0);
 				newRect.x = 0;
 #else
 				newRect.width += pDrawingRect.x;
 				newRect.x = 0;
 #endif
+				newRect.x = newRect.width - labelSize.x;
+				if( !isFolder )
+				{
+					newRect.x -= 4;
+					drawextension = "." + drawextension;
+				}
 
-				newRect.x = newRect.width - labelSize.x - 4;
-
-				drawextension = "." + drawextension;
 				labelSize = labelstyle.CalcSize( new GUIContent( drawextension ) );
 
 				newRect.width = labelSize.x + 1;
-			}
 
+				if( isFolder )
+				{
+					newRect = pDrawingRect;
+					newRect.x += labelstyle.CalcSize( new GUIContent( filename ) ).x + 20;
+				}
+			}
+			
 			Color color = GUI.color;
 
-			// fill background
-			Color bgColor = Common.DefaultBackgroundColor;
-			bgColor.a = 1;
-			GUI.color = bgColor;
-			GUI.DrawTexture( newRect, EditorGUIUtility.whiteTexture );
+			if( !isFolder || icons )
+			{
+				// fill background
+				Color bgColor = Common.DefaultBackgroundColor;
+				bgColor.a = 1;
+				GUI.color = bgColor;
+				GUI.DrawTexture( newRect, EditorGUIUtility.whiteTexture );
+			}
 
 			GUI.color = labelColor;
 			GUI.Label( newRect, drawextension, labelstyle );
 			GUI.color = color;
+		}
+
+		private static FileAttributes GetFileAttr( string assetpath )
+		{
+			FileAttributes attrs;
+
+			if( _fileAttrs.TryGetValue( assetpath, out attrs ) )
+				return ( attrs );
+
+			string searchpath = Common.FullPath( assetpath );
+
+			attrs = File.GetAttributes( searchpath );
+
+			_fileAttrs[ assetpath ] = attrs;
+
+			return ( attrs );
 		}
 
 		private static string GetTooltip( string assetpath )
@@ -262,10 +317,9 @@ namespace Tenebrous.EditorEnhancements
 			return tooltip;
 		}
 
-		private static int GetFileCount( string extension, string filename, string path )
+		private static int GetExtensionsCount( string extension, string filename, string path )
 		{
-			string searchpath = Common.BasePath +
-								path.Substring( 6 ).Replace( Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar );
+			string searchpath = Common.FullPath( path );
 
 			int files = 0;
 			string pathnoext = path + Path.AltDirectorySeparatorChar + filename;
@@ -291,12 +345,50 @@ namespace Tenebrous.EditorEnhancements
 			return files;
 		}
 
+		private static int GetFolderFilesCount( string assetpath )
+		{
+			string searchpath = Common.FullPath( assetpath );
+			int files;
+
+			if( _folderFileCount.TryGetValue( assetpath, out files ) )
+				return ( files );
+
+			string[] otherFilenames = Directory.GetFiles( searchpath );
+			files = 0;
+
+			searchpath += Path.DirectorySeparatorChar + ".";
+
+			foreach( string otherFilename in otherFilenames )
+			{
+				if( otherFilename.StartsWith( searchpath ) )
+					continue;
+
+				if( otherFilename.EndsWith( ".meta" ) )
+					continue;
+
+				files++;
+			}
+
+			_folderFileCount[ assetpath ] = files;
+
+			return files;
+		}
+
 		public static void ClearCache( string sAsset )
 		{
-			_fileCount.Remove( Path.GetDirectoryName( sAsset ) + Path.AltDirectorySeparatorChar +
-							   Path.GetFileNameWithoutExtension( sAsset ) );
+			// remove cached count of number of files with alternate extensions
+			_fileCount.Remove( Path.GetDirectoryName( sAsset ) 
+							   + Path.AltDirectorySeparatorChar
+							   + Path.GetFileNameWithoutExtension( sAsset ) );
 
+			// remove cached tooltips for this path
 			_tooltips.Remove( sAsset );
+
+			// remove cached file attributes for this path
+			_fileAttrs.Remove( sAsset );
+
+			// removed cached folder file count for this path's folder
+			_fileAttrs.Remove( Path.GetDirectoryName(sAsset) );
 		}
 
 
@@ -310,6 +402,7 @@ namespace Tenebrous.EditorEnhancements
 		public static void DrawPrefs()
 		{
 			_setting_showAllExtensions = EditorGUILayout.Toggle( "Show all", _setting_showAllExtensions );
+			_setting_showFileCount = EditorGUILayout.Toggle( "Show folder file counts", _setting_showFileCount );
 
 			_setting_showHoverPreview = EditorGUILayout.Toggle( "Show asset preview on hover", _setting_showHoverPreview );
 			if( _setting_showHoverPreview )
@@ -377,6 +470,7 @@ namespace Tenebrous.EditorEnhancements
 			//string colourinfo;
 
 			_setting_showAllExtensions = EditorPrefs.GetBool( "TeneProjectWindow_All", true );
+			_setting_showFileCount = EditorPrefs.GetBool( "TeneProjectWindow_FileCount", true );
 
 			//string colormap = Common.GetLongPref("TeneProjectWindow_ColorMap");
 			
@@ -389,6 +483,7 @@ namespace Tenebrous.EditorEnhancements
 		private static void SaveSettings()
 		{
 			EditorPrefs.SetBool( "TeneProjectWindow_All", _setting_showAllExtensions );
+			EditorPrefs.SetBool( "TeneProjectWindow_FileCount", _setting_showFileCount );
 
 			string colormap = "";
 			foreach( KeyValuePair<string, Color> entry in _colorMap )
