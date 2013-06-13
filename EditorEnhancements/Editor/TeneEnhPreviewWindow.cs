@@ -180,7 +180,9 @@ public class TeneEnhPreviewWindow : EditorWindow
 
 	void ShowCamera( Rect pPos, Camera pCamera )
 	{
+		Rect oldViewport = pCamera.rect;
 		Handles.DrawCamera(pPos, pCamera);
+		pCamera.rect = oldViewport;
 	}
 
 	void ShowMonoBehaviour(Rect pPos)
