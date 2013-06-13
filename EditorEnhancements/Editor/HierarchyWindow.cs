@@ -40,6 +40,8 @@ namespace Tenebrous.EditorEnhancements
 
 		private static bool _setting_showHoverPreview;
 		private static bool _setting_showHoverPreviewShift;
+		private static bool _setting_showHoverPreviewCtrl;
+		private static bool _setting_showHoverPreviewAlt;
 		private static bool _setting_showHoverTooltip;
 		private static bool _setting_showHoverTooltipShift;
 
@@ -113,10 +115,13 @@ namespace Tenebrous.EditorEnhancements
 			if( gameObject == null )
 				return;
 
-			EditorWindow hierarchyWindow = Common.HierarchyWindow;
 			Texture tex;
 
-			bool doPreview = _setting_showHoverPreview && (!_setting_showHoverPreviewShift || Event.current.modifiers == EventModifiers.Shift);
+			bool doPreview = _setting_showHoverPreview
+						  && ( !_setting_showHoverPreviewShift || ( Event.current.modifiers & EventModifiers.Shift ) != 0 )
+						  && ( !_setting_showHoverPreviewCtrl || ( Event.current.modifiers & EventModifiers.Control ) != 0 )
+						  && ( !_setting_showHoverPreviewAlt || ( Event.current.modifiers & EventModifiers.Alt ) != 0 );
+
 			bool doTooltip = _setting_showHoverTooltip && (!_setting_showHoverTooltipShift || Event.current.modifiers == EventModifiers.Shift);
 			string tooltip = "";
 
@@ -267,7 +272,11 @@ namespace Tenebrous.EditorEnhancements
 		{
 			_setting_showHoverPreview = EditorGUILayout.Toggle( "Show asset preview on hover", _setting_showHoverPreview );
 			if( _setting_showHoverPreview )
+			{
 				_setting_showHoverPreviewShift = EditorGUILayout.Toggle( "         only when holding shift", _setting_showHoverPreviewShift );
+				_setting_showHoverPreviewCtrl  = EditorGUILayout.Toggle( "         only when holding ctrl", _setting_showHoverPreviewCtrl );
+				_setting_showHoverPreviewAlt   = EditorGUILayout.Toggle( "         only when holding alt", _setting_showHoverPreviewAlt );
+			}
 
 			_setting_showHoverTooltip = EditorGUILayout.Toggle( "Show asset tooltip on hover", _setting_showHoverTooltip );
 			if( _setting_showHoverTooltip )
@@ -284,6 +293,8 @@ namespace Tenebrous.EditorEnhancements
 		{
 			_setting_showHoverPreview = EditorPrefs.GetBool( "TeneHierarchyWindow_PreviewOnHover", true );
 			_setting_showHoverPreviewShift = EditorPrefs.GetBool( "TeneHierarchyWindow_PreviewOnHoverShift", false );
+			_setting_showHoverPreviewCtrl = EditorPrefs.GetBool( "TeneHierarchyWindow_PreviewOnHoverCtrl", false );
+			_setting_showHoverPreviewAlt = EditorPrefs.GetBool( "TeneHierarchyWindow_PreviewOnHoverAlt", false );
 			_setting_showHoverTooltip = EditorPrefs.GetBool( "TeneHierarchyWindow_HoverTooltip", true );
 			_setting_showHoverTooltipShift = EditorPrefs.GetBool( "TeneHierarchyWindow_HoverTooltipShift", false );
 		}
@@ -292,6 +303,8 @@ namespace Tenebrous.EditorEnhancements
 		{
 			EditorPrefs.SetBool( "TeneHierarchyWindow_PreviewOnHover", _setting_showHoverPreview );
 			EditorPrefs.SetBool( "TeneHierarchyWindow_PreviewOnHoverShift", _setting_showHoverPreviewShift );
+			EditorPrefs.SetBool( "TeneHierarchyWindow_PreviewOnHoverCtrl", _setting_showHoverPreviewCtrl );
+			EditorPrefs.SetBool( "TeneHierarchyWindow_PreviewOnHoverAlt", _setting_showHoverPreviewAlt );
 			EditorPrefs.SetBool( "TeneHierarchyWindow_HoverTooltip", _setting_showHoverTooltip );
 			EditorPrefs.SetBool( "TeneHierarchyWindow_HoverTooltipShift", _setting_showHoverTooltipShift );
 		}

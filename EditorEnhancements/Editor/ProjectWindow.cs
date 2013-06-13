@@ -24,6 +24,7 @@
 
 using System;
 using System.IO;
+using System.Reflection;
 using UnityEngine;
 using UnityEditor;
 using System.Collections.Generic;
@@ -49,6 +50,8 @@ namespace Tenebrous.EditorEnhancements
 
 		private static bool _setting_showHoverPreview;
 		private static bool _setting_showHoverPreviewShift;
+		private static bool _setting_showHoverPreviewCtrl;
+		private static bool _setting_showHoverPreviewAlt;
 		private static bool _setting_showHoverTooltip;
 		private static bool _setting_showHoverTooltipShift;
 
@@ -66,7 +69,7 @@ namespace Tenebrous.EditorEnhancements
 		{
 			EditorApplication.projectWindowItemOnGUI += Draw;
 			EditorApplication.update += Update;
-
+			
 			if( EditorGUIUtility.isProSkin )
 				_colorMap = new Dictionary<string, Color>()
 				{
@@ -120,15 +123,15 @@ namespace Tenebrous.EditorEnhancements
 			}
 		}
 
-		private static void CheckScriptInfo( string sLines )
+		private static void CheckScriptInfo( string pLines )
 		{
-			string[] scripts = sLines.Split(new char[] {'\n'} ,StringSplitOptions.RemoveEmptyEntries);
-			foreach( string script in scripts )
-			{
-				//Debug.Log(script);
-			}
+			//string[] scripts = sLines.Split(new char[] {'\n'} ,StringSplitOptions.RemoveEmptyEntries);
+			//foreach( string script in scripts )
+			//{
+			//	//Debug.Log(script);
+			//}
 		}
-		
+
 		private static TeneEnhPreviewWindow _window;
 		private static void Update()
 		{
@@ -176,7 +179,11 @@ namespace Tenebrous.EditorEnhancements
 
 			string path = Path.GetDirectoryName( assetpath );
 
-			bool doPreview = _setting_showHoverPreview && ( !_setting_showHoverPreviewShift || Event.current.modifiers == EventModifiers.Shift );
+			bool doPreview = _setting_showHoverPreview
+						  && ( !_setting_showHoverPreviewShift || ( Event.current.modifiers & EventModifiers.Shift ) != 0 )
+						  && ( !_setting_showHoverPreviewCtrl || ( Event.current.modifiers & EventModifiers.Control ) != 0 )
+						  && ( !_setting_showHoverPreviewAlt || ( Event.current.modifiers & EventModifiers.Alt ) != 0 );
+
 			bool doTooltip = _setting_showHoverTooltip && ( !_setting_showHoverTooltipShift || Event.current.modifiers == EventModifiers.Shift );
 
 			if( doTooltip )
@@ -238,7 +245,7 @@ namespace Tenebrous.EditorEnhancements
 			}
 			else
 			{
-#if UNITY_4_0
+#if UNITY_4_0 || UNITY_4_1 || UNITY_4_2 || UNITY_4_3
 				newRect.width += pDrawingRect.x - (_needHackScrollbarWidthForDrawing ? 16 : 0);
 				newRect.x = 0;
 #else
@@ -406,7 +413,11 @@ namespace Tenebrous.EditorEnhancements
 
 			_setting_showHoverPreview = EditorGUILayout.Toggle( "Show asset preview on hover", _setting_showHoverPreview );
 			if( _setting_showHoverPreview )
+			{
 				_setting_showHoverPreviewShift = EditorGUILayout.Toggle( "         only when holding shift", _setting_showHoverPreviewShift );
+				_setting_showHoverPreviewCtrl  = EditorGUILayout.Toggle( "         only when holding ctrl", _setting_showHoverPreviewCtrl );
+				_setting_showHoverPreviewAlt   = EditorGUILayout.Toggle( "         only when holding alt", _setting_showHoverPreviewAlt );
+			}
 
 			_setting_showHoverTooltip = EditorGUILayout.Toggle( "Show asset tooltip on hover", _setting_showHoverTooltip );
 			if( _setting_showHoverTooltip )
@@ -476,6 +487,8 @@ namespace Tenebrous.EditorEnhancements
 			
 			_setting_showHoverPreview = EditorPrefs.GetBool( "TeneProjectWindow_PreviewOnHover", true );
 			_setting_showHoverPreviewShift = EditorPrefs.GetBool( "TeneProjectWindow_PreviewOnHoverShift", false );
+			_setting_showHoverPreviewCtrl = EditorPrefs.GetBool( "TeneProjectWindow_PreviewOnHoverCtrl", false );
+			_setting_showHoverPreviewAlt = EditorPrefs.GetBool( "TeneProjectWindow_PreviewOnHoverAlt", false );
 			_setting_showHoverTooltip = EditorPrefs.GetBool( "TeneProjectWindow_HoverTooltip", true );
 			_setting_showHoverTooltipShift = EditorPrefs.GetBool( "TeneProjectWindow_HoverTooltipShift", false );
 		}
@@ -493,6 +506,8 @@ namespace Tenebrous.EditorEnhancements
 
 			EditorPrefs.SetBool( "TeneProjectWindow_PreviewOnHover", _setting_showHoverPreview );
 			EditorPrefs.SetBool( "TeneProjectWindow_PreviewOnHoverShift", _setting_showHoverPreviewShift );
+			EditorPrefs.SetBool( "TeneProjectWindow_PreviewOnHoverCtrl", _setting_showHoverPreviewCtrl );
+			EditorPrefs.SetBool( "TeneProjectWindow_PreviewOnHoverAlt", _setting_showHoverPreviewAlt );
 			EditorPrefs.SetBool( "TeneProjectWindow_HoverTooltip", _setting_showHoverTooltip );
 			EditorPrefs.SetBool( "TeneProjectWindow_HoverTooltipShift", _setting_showHoverTooltipShift );
 		}
