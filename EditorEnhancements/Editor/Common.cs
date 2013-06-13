@@ -25,7 +25,6 @@
 using System.IO;
 using UnityEngine;
 using UnityEditor;
-using System.Collections.Generic;
 
 namespace Tenebrous.EditorEnhancements
 {
@@ -221,7 +220,7 @@ namespace Tenebrous.EditorEnhancements
 
 		public static Texture GetMiniThumbnail( UnityEngine.Object obj )
 		{
-#if UNITY_4_0
+#if UNITY_4_0 || UNITY_4_1 || UNITY_4_2 || UNITY_4_3
 			return ( AssetPreview.GetMiniThumbnail( obj ) );
 #else
 			return ( EditorUtility.GetMiniThumbnail( obj ) );
@@ -230,7 +229,7 @@ namespace Tenebrous.EditorEnhancements
 
 		public static Texture2D GetAssetPreview( UnityEngine.Object obj )
 		{
-#if UNITY_4_0
+#if UNITY_4_0 || UNITY_4_1 || UNITY_4_2 || UNITY_4_3
 			return ( AssetPreview.GetAssetPreview( obj ) );
 #else
 			return ( EditorUtility.GetAssetPreview( obj ) );
