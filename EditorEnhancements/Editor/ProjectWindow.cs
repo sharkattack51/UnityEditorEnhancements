@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012 Tenebrous
+ * Copyright (c) 2013 Tenebrous
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -19,7 +19,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  *
- * Latest version: http://hg.tenebrous.co.uk/unityeditorenhancements
+ * Latest version: http://hg.tenebrous.co.uk/unityeditorenhancements/wiki/Home
 */
 
 using System;
