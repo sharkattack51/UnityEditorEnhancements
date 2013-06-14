@@ -22,10 +22,12 @@
  * Latest version: http://hg.tenebrous.co.uk/unityeditorenhancements
 */
 
+using System;
 using System.Reflection;
 using UnityEngine;
 using UnityEditor;
 using System.Collections.Generic;
+using Object = UnityEngine.Object;
 
 namespace Tenebrous.EditorEnhancements
 {
@@ -44,6 +46,7 @@ namespace Tenebrous.EditorEnhancements
 		private static bool _setting_showHoverPreviewAlt;
 		private static bool _setting_showHoverTooltip;
 		private static bool _setting_showHoverTooltipShift;
+		private static bool _setting_showHoverDropWindow;
 
 		private static Object _hoverObject;
 		private static Object _lastHoverObject;
@@ -51,7 +54,13 @@ namespace Tenebrous.EditorEnhancements
 		private static int _updateThrottle;
 		private static Vector2 _mousePosition;
 
+		private static GameObject _draggingHeldOver;
+		private static System.DateTime _draggingHeldStart;
+		private static bool _draggingShownQuickInspector;
+
 		private static Dictionary<Object, string> _tooltips = new Dictionary<Object, string>();
+
+		private static bool _wasDragging = false;
 
 		static TeneHierarchyWindow()
 		{
@@ -62,40 +71,73 @@ namespace Tenebrous.EditorEnhancements
 			ReadSettings();
 		}
 
-		private static TeneEnhPreviewWindow _window;
 		private static void Update()
 		{
-			if( _lastHoverObject == null && _hoverObject == null )
-				return;
-
-			if( _lastHoverObject != _hoverObject )
+			bool nowDragging = DragAndDrop.objectReferences.Length == 1;
+			if( _wasDragging != nowDragging )
 			{
-				// don't currently support plain old gameobjects
-				if( _hoverObject is GameObject )
-					if( PrefabUtility.GetPrefabParent( _hoverObject ) == null )
-						_hoverObject = null;
-			}
+				// detect when dragging state changes, so we force a refresh of the hierarchy
+				_wasDragging = nowDragging;
 
-			if( _lastHoverObject != _hoverObject )
-			{
-				_lastHoverObject = _hoverObject;
-
-				TeneEnhPreviewWindow.Update(
-					Common.HierarchyWindow.position,
-					_mousePosition,
-					pAsset: _hoverObject
-				);
-			}
-			else
-			{
-				_updateThrottle++;
-				if( _updateThrottle > 20 )
+				if( !nowDragging )
 				{
-					_hoverObject = null;
-					Common.HierarchyWindow.Repaint();
-					_updateThrottle = 0;
+					_draggingHeldOver = null;
+					_draggingShownQuickInspector = false;
+				}
+
+				// doesn't appear to refresh when starting to drag stuff
+				// but works ok when finishing
+				Common.HierarchyWindow.Repaint();
+			}
+
+			if( _lastHoverObject != null || _hoverObject != null )
+			{
+
+				if( _lastHoverObject != _hoverObject )
+				{
+					// don't currently support plain old gameobjects
+					if( _hoverObject is GameObject )
+						if( PrefabUtility.GetPrefabParent( _hoverObject ) == null )
+							_hoverObject = null;
+				}
+
+				if( _lastHoverObject != _hoverObject )
+				{
+					_lastHoverObject = _hoverObject;
+
+					TeneEnhPreviewWindow.Update(
+						Common.HierarchyWindow.position,
+						_mousePosition,
+						pAsset : _hoverObject
+						);
+				}
+				else
+				{
+					_updateThrottle++;
+					if( _updateThrottle > 20 )
+					{
+						_hoverObject = null;
+						Common.HierarchyWindow.Repaint();
+						_updateThrottle = 0;
+					}
 				}
 			}
+
+			if( _draggingHeldOver != null )
+				if( !_draggingShownQuickInspector )
+					if( ( System.DateTime.Now - _draggingHeldStart ).TotalSeconds >= 0.5f )
+					{
+						// user held mouse over a game object, so we can show the
+						// quick-drop popup window
+
+                        TeneDropTarget.Update(
+                            Common.HierarchyWindow.position,
+                            _mousePosition,
+                            _draggingHeldOver
+                        );
+
+						_draggingShownQuickInspector = true;
+					}
 		}
 
 		static void Updated( SceneView pScene )
@@ -115,14 +157,15 @@ namespace Tenebrous.EditorEnhancements
 			if( gameObject == null )
 				return;
 
+
 			Texture tex;
 
 			bool doPreview = _setting_showHoverPreview
-						  && ( !_setting_showHoverPreviewShift || ( Event.current.modifiers & EventModifiers.Shift ) != 0 )
-						  && ( !_setting_showHoverPreviewCtrl || ( Event.current.modifiers & EventModifiers.Control ) != 0 )
-						  && ( !_setting_showHoverPreviewAlt || ( Event.current.modifiers & EventModifiers.Alt ) != 0 );
-
-			bool doTooltip = _setting_showHoverTooltip && (!_setting_showHoverTooltipShift || Event.current.modifiers == EventModifiers.Shift);
+						&& ( !_setting_showHoverPreviewShift || ( Event.current.modifiers & EventModifiers.Shift ) != 0 )
+						&& ( !_setting_showHoverPreviewCtrl || ( Event.current.modifiers & EventModifiers.Control ) != 0 )
+						&& ( !_setting_showHoverPreviewAlt || ( Event.current.modifiers & EventModifiers.Alt ) != 0 );
+			
+			bool doTooltip = _setting_showHoverTooltip && ( !_setting_showHoverTooltipShift || Event.current.modifiers == EventModifiers.Shift );
 			string tooltip = "";
 
 			Color originalColor = GUI.color;
@@ -151,18 +194,44 @@ namespace Tenebrous.EditorEnhancements
 
 			_mousePosition = new Vector2( Event.current.mousePosition.x + Common.HierarchyWindow.position.x, Event.current.mousePosition.y + Common.HierarchyWindow.position.y );
 
-			if( doPreview )
-				if( pDrawingRect.Contains( Event.current.mousePosition ) )
-					_hoverObject = gameObject;
+			bool mouseIn = pDrawingRect.Contains( Event.current.mousePosition );
+
+			if( doPreview && mouseIn )
+				_hoverObject = gameObject;
+
+			if( DragAndDrop.objectReferences.Length == 1 && _setting_showHoverDropWindow && mouseIn )
+			{
+				if (_draggingHeldOver == null)
+				    _draggingHeldStart = System.DateTime.Now;
+
+				if (_draggingHeldOver != gameObject)
+				    _draggingShownQuickInspector = false;
+
+				_draggingHeldOver = gameObject;
+			}
+
+			bool suitableDrop = false;
 
 			foreach( Component c in gameObject.GetComponents<Component>() )
 			{
 				if( c is Transform )
 					continue;
 
+				if( !suitableDrop && _draggingHeldOver != null && DragAndDrop.objectReferences.Length == 1 )
+				{
+					Object dragging = DragAndDrop.objectReferences[ 0 ];
+					Type type = c.GetType();
+
+					foreach( FieldInfo f in type.GetFields() )
+						if( f.FieldType.IsInstanceOfType( dragging ) )
+						{
+							suitableDrop = true;
+						}
+				}
+
+
 				GUI.color = c.GetEnabled() ? Color.white : new Color( 0.5f, 0.5f, 0.5f, 0.5f );
 
-				tex = null;
 
 				if( c == null )
 				{
@@ -179,6 +248,9 @@ namespace Tenebrous.EditorEnhancements
 
 				if( doTooltip )
  					tooltip = GetTooltip(c);
+
+
+				tex = null;
 
 				if( c is MonoBehaviour )
 				{
@@ -206,17 +278,23 @@ namespace Tenebrous.EditorEnhancements
 				}
 			}
 
+			if( suitableDrop )
+			{
+				Rect labelRect = pDrawingRect;
+				labelRect.width = EditorStyles.label.CalcSize( new GUIContent( gameObject.name ) ).x;
+				labelRect.x -= 2;
+				labelRect.y += 1;
+				GUI.color = Color.white;
+				GUI.DrawTexture( new Rect( labelRect.x, labelRect.y, labelRect.width, 1 ), EditorGUIUtility.whiteTexture );
+				GUI.DrawTexture( new Rect( labelRect.x, labelRect.y, 1, labelRect.height ), EditorGUIUtility.whiteTexture );
+				GUI.DrawTexture( new Rect( labelRect.x, labelRect.yMax, labelRect.width, 1 ), EditorGUIUtility.whiteTexture );
+				GUI.DrawTexture( new Rect( labelRect.xMax, labelRect.y, 1, labelRect.height ), EditorGUIUtility.whiteTexture );
+
+				if( mouseIn )
+					DragAndDrop.visualMode = DragAndDropVisualMode.Generic;
+			}
+
 			GUI.color = originalColor;
-
-			//{
-			//    Rect rect = new Rect(Event.current.mousePosition.x, Event.current.mousePosition.y - hierarchyWindow.position.y, 0, 100);
-
-			//    EditorUtility.DisplayCustomMenu(
-			//        rect,
-			//        new GUIContent[] { new GUIContent("hello") }, 
-			//        -1, null, gameObject
-			//    );
-			//}
 		}
 
 		private static string GetTooltip( UnityEngine.Object pObject )
@@ -273,14 +351,16 @@ namespace Tenebrous.EditorEnhancements
 			_setting_showHoverPreview = EditorGUILayout.Toggle( "Show asset preview on hover", _setting_showHoverPreview );
 			if( _setting_showHoverPreview )
 			{
-				_setting_showHoverPreviewShift = EditorGUILayout.Toggle( "         only when holding shift", _setting_showHoverPreviewShift );
-				_setting_showHoverPreviewCtrl  = EditorGUILayout.Toggle( "         only when holding ctrl", _setting_showHoverPreviewCtrl );
-				_setting_showHoverPreviewAlt   = EditorGUILayout.Toggle( "         only when holding alt", _setting_showHoverPreviewAlt );
+				_setting_showHoverPreviewShift = EditorGUILayout.Toggle( "         when holding shift", _setting_showHoverPreviewShift );
+				_setting_showHoverPreviewCtrl  = EditorGUILayout.Toggle( "         when holding ctrl", _setting_showHoverPreviewCtrl );
+				_setting_showHoverPreviewAlt   = EditorGUILayout.Toggle( "         when holding alt", _setting_showHoverPreviewAlt );
 			}
 
 			_setting_showHoverTooltip = EditorGUILayout.Toggle( "Show asset tooltip on hover", _setting_showHoverTooltip );
 			if( _setting_showHoverTooltip )
-				_setting_showHoverTooltipShift = EditorGUILayout.Toggle( "         only when holding shift", _setting_showHoverTooltipShift );
+				_setting_showHoverTooltipShift = EditorGUILayout.Toggle( "         when holding shift", _setting_showHoverTooltipShift );
+
+			_setting_showHoverDropWindow = EditorGUILayout.Toggle( "Show quick-drop window when dragging over", _setting_showHoverDropWindow );
 
 			if( GUI.changed )
 			{
@@ -297,6 +377,8 @@ namespace Tenebrous.EditorEnhancements
 			_setting_showHoverPreviewAlt = EditorPrefs.GetBool( "TeneHierarchyWindow_PreviewOnHoverAlt", false );
 			_setting_showHoverTooltip = EditorPrefs.GetBool( "TeneHierarchyWindow_HoverTooltip", true );
 			_setting_showHoverTooltipShift = EditorPrefs.GetBool( "TeneHierarchyWindow_HoverTooltipShift", false );
+
+			_setting_showHoverDropWindow = EditorPrefs.GetBool( "TeneHierarchyWindow_HoverDropWindow", true );
 		}
 
 		private static void SaveSettings()
@@ -307,6 +389,7 @@ namespace Tenebrous.EditorEnhancements
 			EditorPrefs.SetBool( "TeneHierarchyWindow_PreviewOnHoverAlt", _setting_showHoverPreviewAlt );
 			EditorPrefs.SetBool( "TeneHierarchyWindow_HoverTooltip", _setting_showHoverTooltip );
 			EditorPrefs.SetBool( "TeneHierarchyWindow_HoverTooltipShift", _setting_showHoverTooltipShift );
+			EditorPrefs.SetBool( "TeneHierarchyWindow_HoverDropWindow", _setting_showHoverDropWindow );
 		}
 	}
 }

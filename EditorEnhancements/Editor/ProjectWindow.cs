@@ -200,7 +200,7 @@ namespace Tenebrous.EditorEnhancements
 
 			_mousePosition = new Vector2(Event.current.mousePosition.x + Common.ProjectWindow.position.x, Event.current.mousePosition.y + Common.ProjectWindow.position.y );
 
-#if UNITY_4_0
+#if UNITY_4_0 || UNITY_4_1 || UNITY_4_2 || UNITY_4_3
 			if( Event.current.mousePosition.x < pDrawingRect.width - 16 )
 #endif
 			if( doPreview )
@@ -414,14 +414,14 @@ namespace Tenebrous.EditorEnhancements
 			_setting_showHoverPreview = EditorGUILayout.Toggle( "Show asset preview on hover", _setting_showHoverPreview );
 			if( _setting_showHoverPreview )
 			{
-				_setting_showHoverPreviewShift = EditorGUILayout.Toggle( "         only when holding shift", _setting_showHoverPreviewShift );
-				_setting_showHoverPreviewCtrl  = EditorGUILayout.Toggle( "         only when holding ctrl", _setting_showHoverPreviewCtrl );
-				_setting_showHoverPreviewAlt   = EditorGUILayout.Toggle( "         only when holding alt", _setting_showHoverPreviewAlt );
+				_setting_showHoverPreviewShift = EditorGUILayout.Toggle( "         when holding shift", _setting_showHoverPreviewShift );
+				_setting_showHoverPreviewCtrl  = EditorGUILayout.Toggle( "         when holding ctrl", _setting_showHoverPreviewCtrl );
+				_setting_showHoverPreviewAlt   = EditorGUILayout.Toggle( "         when holding alt", _setting_showHoverPreviewAlt );
 			}
 
 			_setting_showHoverTooltip = EditorGUILayout.Toggle( "Show asset tooltip on hover", _setting_showHoverTooltip );
 			if( _setting_showHoverTooltip )
-				_setting_showHoverTooltipShift = EditorGUILayout.Toggle( "         only when holding shift", _setting_showHoverTooltipShift );
+				_setting_showHoverTooltipShift = EditorGUILayout.Toggle( "         when holding shift", _setting_showHoverTooltipShift );
 
 			/*
 						string removeExtension = null;
