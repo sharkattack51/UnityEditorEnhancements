@@ -211,22 +211,20 @@ namespace Tenebrous.EditorEnhancements
 			}
 
 			bool suitableDrop = false;
+			Object dragging = _draggingHeldOver != null && DragAndDrop.objectReferences.Length == 1 ? DragAndDrop.objectReferences[ 0 ] : null;
 
 			foreach( Component c in gameObject.GetComponents<Component>() )
 			{
 				if( c is Transform )
 					continue;
 
-				if( !suitableDrop && _draggingHeldOver != null && DragAndDrop.objectReferences.Length == 1 )
+                if( !suitableDrop && dragging != null )
 				{
-					Object dragging = DragAndDrop.objectReferences[ 0 ];
 					Type type = c.GetType();
 
 					foreach( FieldInfo f in type.GetFields() )
 						if( f.FieldType.IsInstanceOfType( dragging ) )
-						{
 							suitableDrop = true;
-						}
 				}
 
 
@@ -360,7 +358,7 @@ namespace Tenebrous.EditorEnhancements
 			if( _setting_showHoverTooltip )
 				_setting_showHoverTooltipShift = EditorGUILayout.Toggle( "         when holding shift", _setting_showHoverTooltipShift );
 
-			_setting_showHoverDropWindow = EditorGUILayout.Toggle( "Show quick-drop window when dragging over", _setting_showHoverDropWindow );
+			_setting_showHoverDropWindow = EditorGUILayout.Toggle( "Show quick-drop window", _setting_showHoverDropWindow );
 
 			if( GUI.changed )
 			{
