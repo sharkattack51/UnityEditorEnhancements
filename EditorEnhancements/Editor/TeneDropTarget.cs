@@ -130,9 +130,9 @@ public class TeneDropTarget : EditorWindow
 			bool drawnHeader = false;
 			Type type = component.GetType();
 
-			foreach( FieldInfo f in type.GetFields() )
+			foreach( FieldInfo f in FieldsFor( type ) )
 			{
-				if( !f.FieldType.IsInstanceOfType( dragging ) )
+				if( !IsCompatibleField(f,dragging) )
 					continue;
 
 				if( !drawnHeader )
@@ -192,5 +192,27 @@ public class TeneDropTarget : EditorWindow
 		GUI.DrawTexture( new Rect( 0, 0, 1, position.height ), EditorGUIUtility.whiteTexture );
 		GUI.DrawTexture( new Rect( 0, position.height - 1, position.width, 1 ), EditorGUIUtility.whiteTexture );
 		GUI.DrawTexture( new Rect( position.width - 1, 0, 1, position.height ), EditorGUIUtility.whiteTexture );
+	}
+
+	public static FieldInfo[] FieldsFor( Type pType )
+	{
+		return pType.GetFields( BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic );
+	}
+
+	public static bool IsCompatibleField( FieldInfo pField, Object pDesiredValue )
+	{
+		if( !pField.FieldType.IsInstanceOfType( pDesiredValue ) )
+			return false;
+
+		if( pField.IsStatic )
+			return false;
+
+		if( Attribute.IsDefined( pField, typeof( System.NonSerializedAttribute ) ) )
+			return false;
+
+		if( Attribute.IsDefined( pField, typeof( SerializeField ) ) )
+			return true;
+
+		return pField.IsPublic;
 	}
 }

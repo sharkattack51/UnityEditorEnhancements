@@ -157,9 +157,6 @@ namespace Tenebrous.EditorEnhancements
 			if( gameObject == null )
 				return;
 
-
-			Texture tex;
-
 			bool doPreview = _setting_showHoverPreview
 						&& ( !_setting_showHoverPreviewShift || ( Event.current.modifiers & EventModifiers.Shift ) != 0 )
 						&& ( !_setting_showHoverPreviewCtrl || ( Event.current.modifiers & EventModifiers.Control ) != 0 )
@@ -170,10 +167,12 @@ namespace Tenebrous.EditorEnhancements
 
 			Color originalColor = GUI.color;
 
+			float width = EditorStyles.label.CalcSize( new GUIContent( gameObject.name ) ).x;
+
 			if( (( 1 << gameObject.layer ) & Tools.visibleLayers) == 0 )
 			{
 				Rect labelRect = pDrawingRect;
-				labelRect.width = EditorStyles.label.CalcSize( new GUIContent( gameObject.name ) ).x;
+				labelRect.width = width;
 				labelRect.x-=2;
 				labelRect.y-=4;
 				GUI.Label( labelRect, "".PadRight( gameObject.name.Length, '_' ) );
@@ -199,6 +198,8 @@ namespace Tenebrous.EditorEnhancements
 			if( doPreview && mouseIn )
 				_hoverObject = gameObject;
 
+			Object dragging = DragAndDrop.objectReferences.Length == 1 ? DragAndDrop.objectReferences[0] : null;
+
 			if( DragAndDrop.objectReferences.Length == 1 && _setting_showHoverDropWindow && mouseIn )
 			{
 				if (_draggingHeldOver == null)
@@ -211,25 +212,23 @@ namespace Tenebrous.EditorEnhancements
 			}
 
 			bool suitableDrop = false;
-			Object dragging = _draggingHeldOver != null && DragAndDrop.objectReferences.Length == 1 ? DragAndDrop.objectReferences[ 0 ] : null;
+			bool drawnEtc = false;
 
 			foreach( Component c in gameObject.GetComponents<Component>() )
 			{
 				if( c is Transform )
 					continue;
 
-                if( !suitableDrop && dragging != null )
+				if( c != null && !suitableDrop && dragging != null )
 				{
 					Type type = c.GetType();
-
-					foreach( FieldInfo f in type.GetFields() )
-						if( f.FieldType.IsInstanceOfType( dragging ) )
+					foreach( FieldInfo f in TeneDropTarget.FieldsFor( type ) )
+						if( TeneDropTarget.IsCompatibleField( f, dragging ) )
+						{
 							suitableDrop = true;
+							break;
+						}
 				}
-
-
-				GUI.color = c.GetEnabled() ? Color.white : new Color( 0.5f, 0.5f, 0.5f, 0.5f );
-
 
 				if( c == null )
 				{
@@ -244,28 +243,39 @@ namespace Tenebrous.EditorEnhancements
 					continue;
 				}
 
+				GUI.color = c.GetEnabled() ? Color.white : new Color( 0.5f, 0.5f, 0.5f, 0.5f );
+
+				if( iconRect.x < pDrawingRect.x + width )
+				{
+					if( !drawnEtc )
+					{
+						GUI.Label( iconRect, " .." );
+						drawnEtc = true;
+					}
+					continue;
+				}
+
 				if( doTooltip )
  					tooltip = GetTooltip(c);
 
-
-				tex = null;
+				Texture iconTexture = null;
 
 				if( c is MonoBehaviour )
 				{
 					MonoScript ms = MonoScript.FromMonoBehaviour( c as MonoBehaviour );
-					tex = AssetDatabase.GetCachedIcon( AssetDatabase.GetAssetPath( ms ) );
+					iconTexture = AssetDatabase.GetCachedIcon( AssetDatabase.GetAssetPath( ms ) );
 				}
 
-				if( tex == null )
-					tex = Common.GetMiniThumbnail( c );
+				if( iconTexture == null )
+					iconTexture = Common.GetMiniThumbnail( c );
 
-				if( tex != null )
+				if( iconTexture != null )
 				{
 					if( doPreview )
 						if( iconRect.Contains( Event.current.mousePosition ) )
 							_hoverObject = c;
 
-					GUI.DrawTexture( iconRect, tex, ScaleMode.ScaleToFit );
+					GUI.DrawTexture( iconRect, iconTexture, ScaleMode.ScaleToFit );
 					if( GUI.Button( iconRect, new GUIContent( "", tooltip ), EditorStyles.label ) )
 					{
 						c.SetEnabled( !c.GetEnabled() );
@@ -279,9 +289,11 @@ namespace Tenebrous.EditorEnhancements
 			if( suitableDrop )
 			{
 				Rect labelRect = pDrawingRect;
-				labelRect.width = EditorStyles.label.CalcSize( new GUIContent( gameObject.name ) ).x;
+				
+				labelRect.width = width;
 				labelRect.x -= 2;
 				labelRect.y += 1;
+
 				GUI.color = Color.white;
 				GUI.DrawTexture( new Rect( labelRect.x, labelRect.y, labelRect.width, 1 ), EditorGUIUtility.whiteTexture );
 				GUI.DrawTexture( new Rect( labelRect.x, labelRect.y, 1, labelRect.height ), EditorGUIUtility.whiteTexture );
@@ -313,7 +325,7 @@ namespace Tenebrous.EditorEnhancements
 			_tooltips.Clear();
 		}
 
-		public static bool GetEnabled( this Component pComponent )
+		static bool GetEnabled( this Component pComponent )
 		{
 			if( pComponent == null )
 				return ( true );
@@ -325,18 +337,18 @@ namespace Tenebrous.EditorEnhancements
 
 			return ( true );
 		}
-		public static void SetEnabled( this Component pComponent, bool bNewValue )
+		static void SetEnabled( this Component pComponent, bool pNewValue )
 		{
 			if( pComponent == null )
 				return;
 
-			Undo.RegisterUndo( pComponent, bNewValue ? "Enable Component" : "Disable Component" );
+			Undo.RegisterUndo( pComponent, pNewValue ? "Enable Component" : "Disable Component" );
 
 			PropertyInfo p = pComponent.GetType().GetProperty( "enabled", typeof( bool ) );
 
 			if( p != null )
 			{
-				p.SetValue( pComponent, bNewValue, null );
+				p.SetValue( pComponent, pNewValue, null );
 				EditorUtility.SetDirty( pComponent.gameObject );
 			}
 		}
@@ -358,7 +370,7 @@ namespace Tenebrous.EditorEnhancements
 			if( _setting_showHoverTooltip )
 				_setting_showHoverTooltipShift = EditorGUILayout.Toggle( "         when holding shift", _setting_showHoverTooltipShift );
 
-			_setting_showHoverDropWindow = EditorGUILayout.Toggle( "Show quick-drop window", _setting_showHoverDropWindow );
+			_setting_showHoverDropWindow = EditorGUILayout.Toggle( "Show quick-drop window when dragging over", _setting_showHoverDropWindow );
 
 			if( GUI.changed )
 			{
