@@ -24,7 +24,6 @@
 
 using System;
 using System.IO;
-using System.Reflection;
 using UnityEngine;
 using UnityEditor;
 using System.Collections.Generic;
@@ -32,46 +31,54 @@ using Object = UnityEngine.Object;
 
 namespace Tenebrous.EditorEnhancements
 {
-	[InitializeOnLoad]
-	public static class TeneProjectWindow
+	public class TeneProjectWindow : EditorEnhancement
 	{
-		private static Dictionary<string, Color> _colorMap;
+		private Dictionary<string, Color> _colorMap;
 
 		// caches for various things
-		private static Dictionary<string, int> _fileCount = new Dictionary<string, int>();
-		private static Dictionary<string, int> _folderFileCount = new Dictionary<string, int>();
-		private static Dictionary<string, string> _tooltips = new Dictionary<string, string>();
-		//private static Dictionary<string, string> _specialPaths = new Dictionary<string, string>();
-		private static Dictionary<string, FileAttributes> _fileAttrs = new Dictionary<string, FileAttributes>();
+		private Dictionary<string, int> _fileCount = new Dictionary<string, int>();
+		private Dictionary<string, int> _folderFileCount = new Dictionary<string, int>();
+		private Dictionary<string, string> _tooltips = new Dictionary<string, string>();
+		//private Dictionary<string, string> _specialPaths = new Dictionary<string, string>();
+		private Dictionary<string, FileAttributes> _fileAttrs = new Dictionary<string, FileAttributes>();
 
+        private enum WhenExtensions
+        {
+            Never,
+            Always,
+            OnlyWhenConflicts
+        }
+        
 		// settings
-		private static bool _setting_showAllExtensions;
-		private static bool _setting_showFileCount;
+        private WhenExtensions _setting_showExtensionsWhen;
+		private bool _setting_showFileCount;
 
-		private static bool _setting_showHoverPreview;
-		private static bool _setting_showHoverPreviewShift;
-		private static bool _setting_showHoverPreviewCtrl;
-		private static bool _setting_showHoverPreviewAlt;
-		private static bool _setting_showHoverTooltip;
-		private static bool _setting_showHoverTooltipShift;
+		private bool _setting_showHoverPreview;
+		private bool _setting_showHoverPreviewShift;
+		private bool _setting_showHoverPreviewCtrl;
+		private bool _setting_showHoverPreviewAlt;
+		private bool _setting_showHoverTooltip;
+        private bool _setting_showHoverTooltipShift;
+        private bool _setting_showHoverTooltipCtrl;
+        private bool _setting_showHoverTooltipAlt;
 
-		private static string _lastGUID;
-		private static string _currentGUID;
-		private static int _updateThrottle;
+		private string _lastGUID;
+		private string _currentGUID;
+		private int _updateThrottle;
 
 		// mouse position recorded during the projectWindowItemOnGUI
-		private static Vector2 _mousePosition;
+		private Vector2 _mousePosition;
 
 		// any version-specific hacks
-		private static bool _needHackScrollbarWidthForDrawing;
+		private bool _needHackScrollbarWidthForDrawing;
 
-		static TeneProjectWindow()
-		{
-			EditorApplication.projectWindowItemOnGUI += Draw;
-			EditorApplication.update += Update;
-			
-			if( EditorGUIUtility.isProSkin )
-				_colorMap = new Dictionary<string, Color>()
+        public override void OnEnable()
+        {
+            EditorApplication.projectWindowItemOnGUI += Draw;
+            EditorApplication.update += Update;
+
+            if( EditorGUIUtility.isProSkin )
+                _colorMap = new Dictionary<string, Color>()
 				{
 					{"png", new Color(0.8f, 0.8f, 1.0f)},
 					{"psd", new Color(0.5f, 0.8f, 1.0f)},
@@ -88,8 +95,8 @@ namespace Tenebrous.EditorEnhancements
 					{"mp3", new Color(0.8f, 0.4f, 1.0f)},
 					{"ogg", new Color(0.8f, 0.4f, 1.0f)},
 				};
-			else
-				_colorMap = new Dictionary<string, Color>()
+            else
+                _colorMap = new Dictionary<string, Color>()
 				{
 					{"png", new Color(0.0f, 0.0f, 1.0f)},
 					{"psd", new Color(0.7f, 0.2f, 1.0f)},
@@ -107,23 +114,48 @@ namespace Tenebrous.EditorEnhancements
 					{"ogg", new Color(0.8f, 0.4f, 1.0f)},
 				};
 
-			//_specialPaths = new Dictionary<string, string>()
-			//{
-			//    {"WebPlayerTemplates", "WebPlayerTemplates - excluded from build"}
-			//};
+            //_specialPaths = new Dictionary<string, string>()
+            //{
+            //    {"WebPlayerTemplates", "WebPlayerTemplates - excluded from build"}
+            //};
 
-			_needHackScrollbarWidthForDrawing = Common.UnityVersion() < Common.UnityVersion( "4.0.0b8" );
+            _needHackScrollbarWidthForDrawing = Common.UnityVersion() < Common.UnityVersion( "4.0.0b8" );
 
-			ReadSettings();
+            ReadSettings();
 
-			if( File.Exists( Common.TempRecompilationList ) )
-			{
-				CheckScriptInfo( File.ReadAllText( Common.TempRecompilationList ) );
-				File.Delete( Common.TempRecompilationList );
-			}
-		}
+            if( File.Exists( Common.TempRecompilationList ) )
+            {
+                CheckScriptInfo( File.ReadAllText( Common.TempRecompilationList ) );
+                File.Delete( Common.TempRecompilationList );
+            }
 
-		private static void CheckScriptInfo( string pLines )
+            if( Common.ProjectWindow != null ) Common.ProjectWindow.Repaint();
+        }
+
+        public override void OnDisable()
+        {
+            EditorApplication.projectWindowItemOnGUI -= Draw;
+            EditorApplication.update -= Update;
+            Common.ProjectWindow.Repaint();
+        }
+
+        public override string Name
+        {
+            get
+            {
+                return "Project Window";
+            }
+        }
+
+        public override string Prefix
+        {
+            get
+            {
+                return "TeneProjectWindow";
+            }
+        }
+
+		private void CheckScriptInfo( string pLines )
 		{
 			//string[] scripts = sLines.Split(new char[] {'\n'} ,StringSplitOptions.RemoveEmptyEntries);
 			//foreach( string script in scripts )
@@ -132,8 +164,8 @@ namespace Tenebrous.EditorEnhancements
 			//}
 		}
 
-		private static TeneEnhPreviewWindow _window;
-		private static void Update()
+		private TeneEnhPreviewWindow _window;
+		private void Update()
 		{
 			if( !_setting_showHoverPreview )
 				return;
@@ -163,7 +195,7 @@ namespace Tenebrous.EditorEnhancements
 			}
 		}
 
-		private static void Draw( string pGUID, Rect pDrawingRect )
+		private void Draw( string pGUID, Rect pDrawingRect )
 		{
 			// called per-line in the project window
 
@@ -179,12 +211,15 @@ namespace Tenebrous.EditorEnhancements
 
 			string path = Path.GetDirectoryName( assetpath );
 
-			bool doPreview = _setting_showHoverPreview
-						  && ( !_setting_showHoverPreviewShift || ( Event.current.modifiers & EventModifiers.Shift ) != 0 )
-						  && ( !_setting_showHoverPreviewCtrl || ( Event.current.modifiers & EventModifiers.Control ) != 0 )
-						  && ( !_setting_showHoverPreviewAlt || ( Event.current.modifiers & EventModifiers.Alt ) != 0 );
+            bool doPreview = _setting_showHoverPreview
+                          && ( !_setting_showHoverPreviewShift || ( Event.current.modifiers & EventModifiers.Shift   ) != 0 )
+                          && ( !_setting_showHoverPreviewCtrl  || ( Event.current.modifiers & EventModifiers.Control ) != 0 )
+                          && ( !_setting_showHoverPreviewAlt   || ( Event.current.modifiers & EventModifiers.Alt     ) != 0 );
 
-			bool doTooltip = _setting_showHoverTooltip && ( !_setting_showHoverTooltipShift || Event.current.modifiers == EventModifiers.Shift );
+            bool doTooltip = _setting_showHoverTooltip
+                          && ( !_setting_showHoverTooltipShift || ( Event.current.modifiers & EventModifiers.Shift   ) != 0 )
+                          && ( !_setting_showHoverTooltipCtrl  || ( Event.current.modifiers & EventModifiers.Control ) != 0 )
+                          && ( !_setting_showHoverTooltipAlt   || ( Event.current.modifiers & EventModifiers.Alt     ) != 0 );
 
 			if( doTooltip )
 			{
@@ -207,9 +242,12 @@ namespace Tenebrous.EditorEnhancements
 				if( pDrawingRect.Contains( Event.current.mousePosition ) )
 					_currentGUID = pGUID;
 
-			if( !_setting_showAllExtensions && !isFolder )
-				if( GetExtensionsCount( extension, filename, path ) <= 1 )
-					return;
+            if( !isFolder )
+                if (_setting_showExtensionsWhen == WhenExtensions.Never)
+                    return;
+                else if( _setting_showExtensionsWhen == WhenExtensions.OnlyWhenConflicts )
+				    if( GetExtensionsCount( extension, filename, path ) <= 1 )
+					    return;
 
 			Color labelColor = Color.grey;
 			string drawextension = "";
@@ -286,7 +324,7 @@ namespace Tenebrous.EditorEnhancements
 			GUI.color = color;
 		}
 
-		private static FileAttributes GetFileAttr( string assetpath )
+		private FileAttributes GetFileAttr( string assetpath )
 		{
 			FileAttributes attrs;
 
@@ -302,7 +340,7 @@ namespace Tenebrous.EditorEnhancements
 			return ( attrs );
 		}
 
-		private static string GetTooltip( string assetpath )
+		private string GetTooltip( string assetpath )
 		{
 			string tooltip;
 
@@ -324,7 +362,7 @@ namespace Tenebrous.EditorEnhancements
 			return tooltip;
 		}
 
-		private static int GetExtensionsCount( string extension, string filename, string path )
+		private int GetExtensionsCount( string extension, string filename, string path )
 		{
 			string searchpath = Common.FullPath( path );
 
@@ -352,7 +390,7 @@ namespace Tenebrous.EditorEnhancements
 			return files;
 		}
 
-		private static int GetFolderFilesCount( string assetpath )
+		private int GetFolderFilesCount( string assetpath )
 		{
 			string searchpath = Common.FullPath( assetpath );
 			int files;
@@ -381,12 +419,12 @@ namespace Tenebrous.EditorEnhancements
 			return files;
 		}
 
-		public static void ClearCache( string sAsset )
+		public void ClearCache( string sAsset )
 		{
 			// remove cached count of number of files with alternate extensions
 			_fileCount.Remove( Path.GetDirectoryName( sAsset ) 
-							   + Path.AltDirectorySeparatorChar
-							   + Path.GetFileNameWithoutExtension( sAsset ) );
+							 + Path.AltDirectorySeparatorChar
+							 + Path.GetFileNameWithoutExtension( sAsset ) );
 
 			// remove cached tooltips for this path
 			_tooltips.Remove( sAsset );
@@ -405,23 +443,45 @@ namespace Tenebrous.EditorEnhancements
 		//		private static string _editingName = "";
 		//		private static Color _editingColor;
 
-		[PreferenceItem( "Project Pane" )]
-		public static void DrawPrefs()
+		public override void DrawPreferences()
 		{
-			_setting_showAllExtensions = EditorGUILayout.Toggle( "Show all", _setting_showAllExtensions );
+			_setting_showExtensionsWhen = (WhenExtensions)EditorGUILayout.EnumPopup( "Show extensions", (Enum)_setting_showExtensionsWhen );
 			_setting_showFileCount = EditorGUILayout.Toggle( "Show folder file counts", _setting_showFileCount );
 
-			_setting_showHoverPreview = EditorGUILayout.Toggle( "Show asset preview on hover", _setting_showHoverPreview );
-			if( _setting_showHoverPreview )
-			{
-				_setting_showHoverPreviewShift = EditorGUILayout.Toggle( "         when holding shift", _setting_showHoverPreviewShift );
-				_setting_showHoverPreviewCtrl  = EditorGUILayout.Toggle( "         when holding ctrl", _setting_showHoverPreviewCtrl );
-				_setting_showHoverPreviewAlt   = EditorGUILayout.Toggle( "         when holding alt", _setting_showHoverPreviewAlt );
-			}
+            EditorGUILayout.BeginHorizontal();
+            _setting_showHoverPreview = EditorGUILayout.Toggle( "Asset preview on hover", _setting_showHoverPreview );
 
-			_setting_showHoverTooltip = EditorGUILayout.Toggle( "Show asset tooltip on hover", _setting_showHoverTooltip );
-			if( _setting_showHoverTooltip )
-				_setting_showHoverTooltipShift = EditorGUILayout.Toggle( "         when holding shift", _setting_showHoverTooltipShift );
+            if( _setting_showHoverPreview )
+            {
+                EditorGUILayout.Space();
+                _setting_showHoverPreviewShift = GUILayout.Toggle( _setting_showHoverPreviewShift, "shift" );
+                EditorGUILayout.Space();
+                _setting_showHoverPreviewCtrl = GUILayout.Toggle( _setting_showHoverPreviewCtrl, "ctrl" );
+                EditorGUILayout.Space();
+                _setting_showHoverPreviewAlt = GUILayout.Toggle( _setting_showHoverPreviewAlt, "alt" );
+            }
+
+            GUILayout.FlexibleSpace();
+
+            EditorGUILayout.EndHorizontal();
+
+
+            EditorGUILayout.BeginHorizontal();
+            _setting_showHoverTooltip = EditorGUILayout.Toggle( "Asset tooltip on hover", _setting_showHoverTooltip );
+
+            if( _setting_showHoverTooltip )
+            {
+                EditorGUILayout.Space();
+                _setting_showHoverTooltipShift = GUILayout.Toggle( _setting_showHoverTooltipShift, "shift" );
+                EditorGUILayout.Space();
+                _setting_showHoverTooltipCtrl = GUILayout.Toggle( _setting_showHoverTooltipCtrl, "ctrl" );
+                EditorGUILayout.Space();
+                _setting_showHoverTooltipAlt = GUILayout.Toggle( _setting_showHoverTooltipAlt, "alt" );
+            }
+
+            GUILayout.FlexibleSpace();
+
+            EditorGUILayout.EndHorizontal();
 
 			/*
 						string removeExtension = null;
@@ -476,11 +536,19 @@ namespace Tenebrous.EditorEnhancements
 			}
 		}
 
-		private static void ReadSettings()
+		private void ReadSettings()
 		{
 			//string colourinfo;
 
-			_setting_showAllExtensions = EditorPrefs.GetBool( "TeneProjectWindow_All", true );
+            if( EditorPrefs.HasKey( "TeneProjectWindow_All" ) )
+            {
+                _setting_showExtensionsWhen = EditorPrefs.GetBool( "TeneProjectWindow_All", true ) ? WhenExtensions.Always : WhenExtensions.OnlyWhenConflicts;
+                EditorPrefs.DeleteKey( "TeneProjectWindow_All" );
+            }
+            else
+            {
+                _setting_showExtensionsWhen = (WhenExtensions)EditorPrefs.GetInt( "TeneProjectWindow_WhenExtensions", (int)WhenExtensions.OnlyWhenConflicts );
+            }
 			_setting_showFileCount = EditorPrefs.GetBool( "TeneProjectWindow_FileCount", true );
 
 			//string colormap = Common.GetLongPref("TeneProjectWindow_ColorMap");
@@ -490,12 +558,14 @@ namespace Tenebrous.EditorEnhancements
 			_setting_showHoverPreviewCtrl = EditorPrefs.GetBool( "TeneProjectWindow_PreviewOnHoverCtrl", false );
 			_setting_showHoverPreviewAlt = EditorPrefs.GetBool( "TeneProjectWindow_PreviewOnHoverAlt", false );
 			_setting_showHoverTooltip = EditorPrefs.GetBool( "TeneProjectWindow_HoverTooltip", true );
-			_setting_showHoverTooltipShift = EditorPrefs.GetBool( "TeneProjectWindow_HoverTooltipShift", false );
-		}
+            _setting_showHoverTooltipShift = EditorPrefs.GetBool( "TeneProjectWindow_HoverTooltipShift", false );
+            _setting_showHoverTooltipCtrl = EditorPrefs.GetBool( "TeneProjectWindow_HoverTooltipCtrl", false );
+            _setting_showHoverTooltipAlt = EditorPrefs.GetBool( "TeneProjectWindow_HoverTooltipAlt", false );
+        }
 
-		private static void SaveSettings()
+		private void SaveSettings()
 		{
-			EditorPrefs.SetBool( "TeneProjectWindow_All", _setting_showAllExtensions );
+			EditorPrefs.SetInt( "TeneProjectWindow_WhenExtensions", (int)_setting_showExtensionsWhen );
 			EditorPrefs.SetBool( "TeneProjectWindow_FileCount", _setting_showFileCount );
 
 			string colormap = "";
@@ -509,35 +579,41 @@ namespace Tenebrous.EditorEnhancements
 			EditorPrefs.SetBool( "TeneProjectWindow_PreviewOnHoverCtrl", _setting_showHoverPreviewCtrl );
 			EditorPrefs.SetBool( "TeneProjectWindow_PreviewOnHoverAlt", _setting_showHoverPreviewAlt );
 			EditorPrefs.SetBool( "TeneProjectWindow_HoverTooltip", _setting_showHoverTooltip );
-			EditorPrefs.SetBool( "TeneProjectWindow_HoverTooltipShift", _setting_showHoverTooltipShift );
-		}
+            EditorPrefs.SetBool( "TeneProjectWindow_HoverTooltipShift", _setting_showHoverTooltipShift );
+            EditorPrefs.SetBool( "TeneProjectWindow_HoverTooltipCtrl", _setting_showHoverTooltipCtrl );
+            EditorPrefs.SetBool( "TeneProjectWindow_HoverTooltipAlt", _setting_showHoverTooltipAlt );
+        }
 	}
 
-	public class ProjectWindowExtensionsClass : AssetPostprocessor
-	{
-		private static void OnPostprocessAllAssets( string[] pImported, string[] pDeleted, string[] pMoved, string[] pMoveFrom )
-		{
-			string compilationList = "";
-			foreach( string file in pImported )
-			{
-				string lower = file.ToLower();
-				if( lower.EndsWith( ".cs" ) || lower.EndsWith( ".boo" ) || lower.EndsWith( ".js" ) )
-					compilationList += file + "\n";
-				
-				TeneProjectWindow.ClearCache( file );
-			}
+    public class ProjectWindowExtensionsClass : AssetPostprocessor
+    {
+        private static void OnPostprocessAllAssets( string[] pImported, string[] pDeleted, string[] pMoved, string[] pMoveFrom )
+        {
+            TeneProjectWindow proj = Main.Enhancement<TeneProjectWindow>();
+            if (proj == null )
+                return;
 
-			if( compilationList.Length > 0 )
-				File.WriteAllText( Common.TempRecompilationList, compilationList );
+            string compilationList = "";
+            foreach( string file in pImported )
+            {
+                string lower = file.ToLower();
+                if( lower.EndsWith( ".cs" ) || lower.EndsWith( ".boo" ) || lower.EndsWith( ".js" ) )
+                    compilationList += file + "\n";
 
-			foreach( string file in pDeleted )
-				TeneProjectWindow.ClearCache( file );
+                proj.ClearCache( file );
+            }
 
-			foreach( string file in pMoved )
-				TeneProjectWindow.ClearCache( file );
+            if( compilationList.Length > 0 )
+                File.WriteAllText( Common.TempRecompilationList, compilationList );
 
-			foreach( string file in pMoveFrom )
-				TeneProjectWindow.ClearCache( file );
-		}
-	}
+            foreach( string file in pDeleted )
+                proj.ClearCache( file );
+
+            foreach( string file in pMoved )
+                proj.ClearCache( file );
+
+            foreach( string file in pMoveFrom )
+                proj.ClearCache( file );
+        }
+    }
 }

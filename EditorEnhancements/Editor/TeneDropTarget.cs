@@ -25,10 +25,8 @@
 using System;
 using System.IO;
 using System.Reflection;
-using Tenebrous.EditorEnhancements;
 using UnityEditor;
 using UnityEngine;
-using System.Collections;
 using Object = UnityEngine.Object;
 
 public class TeneDropTarget : EditorWindow
@@ -36,7 +34,7 @@ public class TeneDropTarget : EditorWindow
 	private static TeneDropTarget _window;
 
 	private GameObject _target;
-	private Rect _anchoredTo;
+	//private Rect _anchoredTo;
 	private Rect _desiredPosition;
 	private bool _repositioned;
 	public bool HadMouseOver;
@@ -55,7 +53,7 @@ public class TeneDropTarget : EditorWindow
 
 		_window._close = false;
 		_window._repositioned = false;
-		_window._anchoredTo = pAnchorTo;
+		//_window._anchoredTo = pAnchorTo;
 		_window.HadMouseOver = false;
 
 		_window.title = pObject.name;
