@@ -366,7 +366,10 @@ namespace Tenebrous.EditorEnhancements
 		public override void DrawPreferences()
 		{
             EditorGUILayout.BeginHorizontal();
-            _setting_showHoverPreview = EditorGUILayout.Toggle( "Asset preview on hover", _setting_showHoverPreview );
+
+            GUILayout.Label( "Asset preview on hover", GUILayout.Width( 176 ) );
+
+            _setting_showHoverPreview = GUILayout.Toggle( _setting_showHoverPreview, "" );
 
             if( _setting_showHoverPreview )
             {
@@ -384,7 +387,10 @@ namespace Tenebrous.EditorEnhancements
 
 
             EditorGUILayout.BeginHorizontal();
-            _setting_showHoverTooltip = EditorGUILayout.Toggle( "Asset tooltip on hover", _setting_showHoverTooltip );
+
+            GUILayout.Label( "Asset tooltip on hover", GUILayout.Width( 176 ) );
+
+            _setting_showHoverTooltip = GUILayout.Toggle( _setting_showHoverTooltip, "" );
 
             if( _setting_showHoverTooltip )
             {
@@ -411,16 +417,17 @@ namespace Tenebrous.EditorEnhancements
 
 		public void ReadSettings()
 		{
-			_setting_showHoverPreview = EditorPrefs.GetBool( "TeneHierarchyWindow_PreviewOnHover", true );
-			_setting_showHoverPreviewShift = EditorPrefs.GetBool( "TeneHierarchyWindow_PreviewOnHoverShift", false );
-			_setting_showHoverPreviewCtrl = EditorPrefs.GetBool( "TeneHierarchyWindow_PreviewOnHoverCtrl", false );
-			_setting_showHoverPreviewAlt = EditorPrefs.GetBool( "TeneHierarchyWindow_PreviewOnHoverAlt", false );
-			_setting_showHoverTooltip = EditorPrefs.GetBool( "TeneHierarchyWindow_HoverTooltip", true );
-            _setting_showHoverTooltipShift = EditorPrefs.GetBool( "TeneHierarchyWindow_HoverTooltipShift", false );
-            _setting_showHoverTooltipCtrl = EditorPrefs.GetBool( "TeneHierarchyWindow_HoverTooltipCtrl", false );
-            _setting_showHoverTooltipAlt = EditorPrefs.GetBool( "TeneHierarchyWindow_HoverTooltipAlt", false );
+            _setting_showHoverPreview = EditorPrefs.GetBool( "TeneHierarchyWindow_PreviewOnHover", Defaults.HierarchyWindowHoverPreview );
+            _setting_showHoverPreviewShift = EditorPrefs.GetBool( "TeneHierarchyWindow_PreviewOnHoverShift", Defaults.HierarchyWindowHoverPreviewShift );
+            _setting_showHoverPreviewCtrl = EditorPrefs.GetBool( "TeneHierarchyWindow_PreviewOnHoverCtrl", Defaults.HierarchyWindowHoverPreviewCtrl );
+            _setting_showHoverPreviewAlt = EditorPrefs.GetBool( "TeneHierarchyWindow_PreviewOnHoverAlt", Defaults.HierarchyWindowHoverPreviewAlt );
 
-			_setting_showHoverDropWindow = EditorPrefs.GetBool( "TeneHierarchyWindow_HoverDropWindow", true );
+            _setting_showHoverTooltip = EditorPrefs.GetBool( "TeneHierarchyWindow_HoverTooltip", Defaults.HierarchyWindowHoverTooltip );
+            _setting_showHoverTooltipShift = EditorPrefs.GetBool( "TeneHierarchyWindow_HoverTooltipShift", Defaults.HierarchyWindowHoverTooltipShift );
+            _setting_showHoverTooltipCtrl = EditorPrefs.GetBool( "TeneHierarchyWindow_HoverTooltipCtrl", Defaults.HierarchyWindowHoverTooltipCtrl );
+            _setting_showHoverTooltipAlt = EditorPrefs.GetBool( "TeneHierarchyWindow_HoverTooltipAlt", Defaults.HierarchyWindowHoverTooltipAlt );
+
+            _setting_showHoverDropWindow = EditorPrefs.GetBool( "TeneHierarchyWindow_HoverDropWindow", Defaults.HierarchyWindowHoverDropWindow );
 		}
 
 		private void SaveSettings()
@@ -429,10 +436,12 @@ namespace Tenebrous.EditorEnhancements
 			EditorPrefs.SetBool( "TeneHierarchyWindow_PreviewOnHoverShift", _setting_showHoverPreviewShift );
 			EditorPrefs.SetBool( "TeneHierarchyWindow_PreviewOnHoverCtrl", _setting_showHoverPreviewCtrl );
 			EditorPrefs.SetBool( "TeneHierarchyWindow_PreviewOnHoverAlt", _setting_showHoverPreviewAlt );
+
 			EditorPrefs.SetBool( "TeneHierarchyWindow_HoverTooltip", _setting_showHoverTooltip );
             EditorPrefs.SetBool( "TeneHierarchyWindow_HoverTooltipShift", _setting_showHoverTooltipShift );
             EditorPrefs.SetBool( "TeneHierarchyWindow_HoverTooltipCtrl", _setting_showHoverTooltipCtrl );
             EditorPrefs.SetBool( "TeneHierarchyWindow_HoverTooltipAlt", _setting_showHoverTooltipAlt );
+
             EditorPrefs.SetBool( "TeneHierarchyWindow_HoverDropWindow", _setting_showHoverDropWindow );
 		}
 	}

@@ -42,7 +42,7 @@ namespace Tenebrous.EditorEnhancements
 		//private Dictionary<string, string> _specialPaths = new Dictionary<string, string>();
 		private Dictionary<string, FileAttributes> _fileAttrs = new Dictionary<string, FileAttributes>();
 
-        private enum WhenExtensions
+        public enum ShowExtensions
         {
             Never,
             Always,
@@ -50,7 +50,7 @@ namespace Tenebrous.EditorEnhancements
         }
         
 		// settings
-        private WhenExtensions _setting_showExtensionsWhen;
+        private ShowExtensions _setting_showExtensionsWhen;
 		private bool _setting_showFileCount;
 
 		private bool _setting_showHoverPreview;
@@ -243,9 +243,9 @@ namespace Tenebrous.EditorEnhancements
 					_currentGUID = pGUID;
 
             if( !isFolder )
-                if (_setting_showExtensionsWhen == WhenExtensions.Never)
+                if (_setting_showExtensionsWhen == ShowExtensions.Never)
                     return;
-                else if( _setting_showExtensionsWhen == WhenExtensions.OnlyWhenConflicts )
+                else if( _setting_showExtensionsWhen == ShowExtensions.OnlyWhenConflicts )
 				    if( GetExtensionsCount( extension, filename, path ) <= 1 )
 					    return;
 
@@ -445,11 +445,14 @@ namespace Tenebrous.EditorEnhancements
 
 		public override void DrawPreferences()
 		{
-			_setting_showExtensionsWhen = (WhenExtensions)EditorGUILayout.EnumPopup( "Show extensions", (Enum)_setting_showExtensionsWhen );
+			_setting_showExtensionsWhen = (ShowExtensions)EditorGUILayout.EnumPopup( "Show extensions", (Enum)_setting_showExtensionsWhen );
 			_setting_showFileCount = EditorGUILayout.Toggle( "Show folder file counts", _setting_showFileCount );
 
             EditorGUILayout.BeginHorizontal();
-            _setting_showHoverPreview = EditorGUILayout.Toggle( "Asset preview on hover", _setting_showHoverPreview );
+
+            GUILayout.Label( "Asset preview on hover", GUILayout.Width( 176 ) );
+
+            _setting_showHoverPreview = GUILayout.Toggle( _setting_showHoverPreview, "" );
 
             if( _setting_showHoverPreview )
             {
@@ -467,7 +470,10 @@ namespace Tenebrous.EditorEnhancements
 
 
             EditorGUILayout.BeginHorizontal();
-            _setting_showHoverTooltip = EditorGUILayout.Toggle( "Asset tooltip on hover", _setting_showHoverTooltip );
+
+            GUILayout.Label( "Asset tooltip on hover", GUILayout.Width( 176 ) );
+
+            _setting_showHoverTooltip = GUILayout.Toggle( _setting_showHoverTooltip, "" );
 
             if( _setting_showHoverTooltip )
             {
@@ -542,25 +548,26 @@ namespace Tenebrous.EditorEnhancements
 
             if( EditorPrefs.HasKey( "TeneProjectWindow_All" ) )
             {
-                _setting_showExtensionsWhen = EditorPrefs.GetBool( "TeneProjectWindow_All", true ) ? WhenExtensions.Always : WhenExtensions.OnlyWhenConflicts;
+                _setting_showExtensionsWhen = EditorPrefs.GetBool( "TeneProjectWindow_All", true ) ? ShowExtensions.Always : ShowExtensions.OnlyWhenConflicts;
                 EditorPrefs.DeleteKey( "TeneProjectWindow_All" );
             }
             else
             {
-                _setting_showExtensionsWhen = (WhenExtensions)EditorPrefs.GetInt( "TeneProjectWindow_WhenExtensions", (int)WhenExtensions.OnlyWhenConflicts );
+                _setting_showExtensionsWhen = (ShowExtensions)EditorPrefs.GetInt( "TeneProjectWindow_WhenExtensions", (int)Defaults.ProjectWindowExtensionsWhen );
             }
-			_setting_showFileCount = EditorPrefs.GetBool( "TeneProjectWindow_FileCount", true );
+            _setting_showFileCount = EditorPrefs.GetBool( "TeneProjectWindow_FileCount", Defaults.ProjectWindowFileCount );
 
 			//string colormap = Common.GetLongPref("TeneProjectWindow_ColorMap");
-			
-			_setting_showHoverPreview = EditorPrefs.GetBool( "TeneProjectWindow_PreviewOnHover", true );
-			_setting_showHoverPreviewShift = EditorPrefs.GetBool( "TeneProjectWindow_PreviewOnHoverShift", false );
-			_setting_showHoverPreviewCtrl = EditorPrefs.GetBool( "TeneProjectWindow_PreviewOnHoverCtrl", false );
-			_setting_showHoverPreviewAlt = EditorPrefs.GetBool( "TeneProjectWindow_PreviewOnHoverAlt", false );
-			_setting_showHoverTooltip = EditorPrefs.GetBool( "TeneProjectWindow_HoverTooltip", true );
-            _setting_showHoverTooltipShift = EditorPrefs.GetBool( "TeneProjectWindow_HoverTooltipShift", false );
-            _setting_showHoverTooltipCtrl = EditorPrefs.GetBool( "TeneProjectWindow_HoverTooltipCtrl", false );
-            _setting_showHoverTooltipAlt = EditorPrefs.GetBool( "TeneProjectWindow_HoverTooltipAlt", false );
+
+            _setting_showHoverPreview = EditorPrefs.GetBool( "TeneProjectWindow_PreviewOnHover", Defaults.ProjectWindowHoverPreview );
+            _setting_showHoverPreviewShift = EditorPrefs.GetBool( "TeneProjectWindow_PreviewOnHoverShift", Defaults.ProjectWindowHoverPreviewShift );
+            _setting_showHoverPreviewCtrl = EditorPrefs.GetBool( "TeneProjectWindow_PreviewOnHoverCtrl", Defaults.ProjectWindowHoverPreviewCtrl );
+            _setting_showHoverPreviewAlt = EditorPrefs.GetBool( "TeneProjectWindow_PreviewOnHoverAlt", Defaults.ProjectWindowHoverPreviewAlt );
+
+            _setting_showHoverTooltip = EditorPrefs.GetBool( "TeneProjectWindow_HoverTooltip", Defaults.ProjectWindowHoverTooltip );
+            _setting_showHoverTooltipShift = EditorPrefs.GetBool( "TeneProjectWindow_HoverTooltipShift", Defaults.ProjectWindowHoverTooltipShift );
+            _setting_showHoverTooltipCtrl = EditorPrefs.GetBool( "TeneProjectWindow_HoverTooltipCtrl", Defaults.ProjectWindowHoverTooltipCtrl );
+            _setting_showHoverTooltipAlt = EditorPrefs.GetBool( "TeneProjectWindow_HoverTooltipAlt", Defaults.ProjectWindowHoverTooltipAlt );
         }
 
 		private void SaveSettings()
@@ -578,6 +585,7 @@ namespace Tenebrous.EditorEnhancements
 			EditorPrefs.SetBool( "TeneProjectWindow_PreviewOnHoverShift", _setting_showHoverPreviewShift );
 			EditorPrefs.SetBool( "TeneProjectWindow_PreviewOnHoverCtrl", _setting_showHoverPreviewCtrl );
 			EditorPrefs.SetBool( "TeneProjectWindow_PreviewOnHoverAlt", _setting_showHoverPreviewAlt );
+
 			EditorPrefs.SetBool( "TeneProjectWindow_HoverTooltip", _setting_showHoverTooltip );
             EditorPrefs.SetBool( "TeneProjectWindow_HoverTooltipShift", _setting_showHoverTooltipShift );
             EditorPrefs.SetBool( "TeneProjectWindow_HoverTooltipCtrl", _setting_showHoverTooltipCtrl );
