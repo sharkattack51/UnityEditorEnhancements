@@ -446,47 +446,50 @@ namespace Tenebrous.EditorEnhancements
 		public override void DrawPreferences()
 		{
 			_setting_showExtensionsWhen = (ShowExtensions)EditorGUILayout.EnumPopup( "Show extensions", (Enum)_setting_showExtensionsWhen );
-			_setting_showFileCount = EditorGUILayout.Toggle( "Show folder file counts", _setting_showFileCount );
+
+			EditorGUILayout.BeginHorizontal();
+				EditorGUILayout.Space();
+				_setting_showFileCount = GUILayout.Toggle( _setting_showFileCount, "" );
+				GUILayout.Label( "Show folder file count", GUILayout.Width( 176 ) );
+				GUILayout.FlexibleSpace();
+			EditorGUILayout.EndHorizontal();
+
 
             EditorGUILayout.BeginHorizontal();
+				EditorGUILayout.Space();
+				_setting_showHoverPreview = GUILayout.Toggle( _setting_showHoverPreview, "" );
+				GUILayout.Label( "Asset preview on hover", GUILayout.Width( 176 ) );
 
-            GUILayout.Label( "Asset preview on hover", GUILayout.Width( 176 ) );
+				if( _setting_showHoverPreview )
+				{
+					EditorGUILayout.Space();
+					_setting_showHoverPreviewShift = GUILayout.Toggle( _setting_showHoverPreviewShift, "shift" );
+					EditorGUILayout.Space();
+					_setting_showHoverPreviewCtrl = GUILayout.Toggle( _setting_showHoverPreviewCtrl, "ctrl" );
+					EditorGUILayout.Space();
+					_setting_showHoverPreviewAlt = GUILayout.Toggle( _setting_showHoverPreviewAlt, "alt" );
+				}
 
-            _setting_showHoverPreview = GUILayout.Toggle( _setting_showHoverPreview, "" );
-
-            if( _setting_showHoverPreview )
-            {
-                EditorGUILayout.Space();
-                _setting_showHoverPreviewShift = GUILayout.Toggle( _setting_showHoverPreviewShift, "shift" );
-                EditorGUILayout.Space();
-                _setting_showHoverPreviewCtrl = GUILayout.Toggle( _setting_showHoverPreviewCtrl, "ctrl" );
-                EditorGUILayout.Space();
-                _setting_showHoverPreviewAlt = GUILayout.Toggle( _setting_showHoverPreviewAlt, "alt" );
-            }
-
-            GUILayout.FlexibleSpace();
-
+				GUILayout.FlexibleSpace();
             EditorGUILayout.EndHorizontal();
 
 
             EditorGUILayout.BeginHorizontal();
+				EditorGUILayout.Space();
+				_setting_showHoverTooltip = GUILayout.Toggle( _setting_showHoverTooltip, "" );
+				GUILayout.Label( "Asset tooltip on hover", GUILayout.Width( 176 ) );
 
-            GUILayout.Label( "Asset tooltip on hover", GUILayout.Width( 176 ) );
+				if( _setting_showHoverTooltip )
+				{
+					EditorGUILayout.Space();
+					_setting_showHoverTooltipShift = GUILayout.Toggle( _setting_showHoverTooltipShift, "shift" );
+					EditorGUILayout.Space();
+					_setting_showHoverTooltipCtrl = GUILayout.Toggle( _setting_showHoverTooltipCtrl, "ctrl" );
+					EditorGUILayout.Space();
+					_setting_showHoverTooltipAlt = GUILayout.Toggle( _setting_showHoverTooltipAlt, "alt" );
+				}
 
-            _setting_showHoverTooltip = GUILayout.Toggle( _setting_showHoverTooltip, "" );
-
-            if( _setting_showHoverTooltip )
-            {
-                EditorGUILayout.Space();
-                _setting_showHoverTooltipShift = GUILayout.Toggle( _setting_showHoverTooltipShift, "shift" );
-                EditorGUILayout.Space();
-                _setting_showHoverTooltipCtrl = GUILayout.Toggle( _setting_showHoverTooltipCtrl, "ctrl" );
-                EditorGUILayout.Space();
-                _setting_showHoverTooltipAlt = GUILayout.Toggle( _setting_showHoverTooltipAlt, "alt" );
-            }
-
-            GUILayout.FlexibleSpace();
-
+				GUILayout.FlexibleSpace();
             EditorGUILayout.EndHorizontal();
 
 			/*

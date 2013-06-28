@@ -31,6 +31,7 @@ using Object = UnityEngine.Object;
 
 namespace Tenebrous.EditorEnhancements
 {
+
     public class TeneHierarchyWindow : EditorEnhancement
 	{
 		private Dictionary<string, Color> _colorMap;
@@ -43,10 +44,23 @@ namespace Tenebrous.EditorEnhancements
 		private bool _setting_showHoverPreviewShift;
 		private bool _setting_showHoverPreviewCtrl;
 		private bool _setting_showHoverPreviewAlt;
+
 		private bool _setting_showHoverTooltip;
-        private bool _setting_showHoverTooltipShift;
-        private bool _setting_showHoverTooltipCtrl;
-        private bool _setting_showHoverTooltipAlt;
+		private bool _setting_showHoverTooltipShift;
+		private bool _setting_showHoverTooltipCtrl;
+		private bool _setting_showHoverTooltipAlt;
+
+		private bool _setting_showComponents;
+		private bool _setting_showComponentsShift;
+		private bool _setting_showComponentsCtrl;
+		private bool _setting_showComponentsAlt;
+
+		private bool _setting_showLock;
+		private bool _setting_showLockLocked;
+		private bool _setting_showLockShift;
+		private bool _setting_showLockCtrl;
+		private bool _setting_showLockAlt;
+
         private bool _setting_showHoverDropWindow;
 
 		private Object _hoverObject;
@@ -74,6 +88,7 @@ namespace Tenebrous.EditorEnhancements
             EditorApplication.update += Update;
             SceneView.onSceneGUIDelegate += Updated;
             EditorApplication.hierarchyWindowChanged += ClearTooltipCache;
+            EditorApplication.modifierKeysChanged += ModifierKeysChanged;
             if( Common.HierarchyWindow != null ) Common.HierarchyWindow.Repaint();
         }
 
@@ -83,6 +98,7 @@ namespace Tenebrous.EditorEnhancements
             EditorApplication.update -= Update;
             SceneView.onSceneGUIDelegate -= Updated;
             EditorApplication.hierarchyWindowChanged -= ClearTooltipCache;
+			EditorApplication.modifierKeysChanged -= ModifierKeysChanged;
             Common.HierarchyWindow.Repaint();
         }
 
@@ -102,6 +118,10 @@ namespace Tenebrous.EditorEnhancements
             }
         }
 
+        private void ModifierKeysChanged()
+        {
+            Common.HierarchyWindow.Repaint();
+        }
 
 		private void Update()
 		{
@@ -181,165 +201,203 @@ namespace Tenebrous.EditorEnhancements
 				Common.HierarchyWindow.Repaint();
 		}
 
-		private void Draw( int pInstanceID, Rect pDrawingRect )
-		{
-			// called per-line in the hierarchy window
+	    private void Draw( int pInstanceID, Rect pDrawingRect )
+	    {
+		    // called per-line in the hierarchy window
 
-			GameObject gameObject = EditorUtility.InstanceIDToObject( pInstanceID ) as GameObject;
-			if( gameObject == null )
-				return;
+		    GameObject gameObject = EditorUtility.InstanceIDToObject( pInstanceID ) as GameObject;
+		    if( gameObject == null )
+			    return;
 
-            bool doPreview = _setting_showHoverPreview
-                          && ( !_setting_showHoverPreviewShift || ( Event.current.modifiers & EventModifiers.Shift   ) != 0 )
-                          && ( !_setting_showHoverPreviewCtrl  || ( Event.current.modifiers & EventModifiers.Control ) != 0 )
-                          && ( !_setting_showHoverPreviewAlt   || ( Event.current.modifiers & EventModifiers.Alt     ) != 0 );
+			bool currentLock = ( gameObject.hideFlags & HideFlags.NotEditable ) != 0;
 
-            bool doTooltip = _setting_showHoverTooltip
-                          && ( !_setting_showHoverTooltipShift || ( Event.current.modifiers & EventModifiers.Shift   ) != 0 )
-                          && ( !_setting_showHoverTooltipCtrl  || ( Event.current.modifiers & EventModifiers.Control ) != 0 )
-                          && ( !_setting_showHoverTooltipAlt   || ( Event.current.modifiers & EventModifiers.Alt     ) != 0 );
+		    bool doPreview = _setting_showHoverPreview
+		                     && ( !_setting_showHoverPreviewShift || ( Event.current.modifiers & EventModifiers.Shift   ) != 0 )
+		                     && ( !_setting_showHoverPreviewCtrl  || ( Event.current.modifiers & EventModifiers.Control ) != 0 )
+		                     && ( !_setting_showHoverPreviewAlt   || ( Event.current.modifiers & EventModifiers.Alt     ) != 0 );
 
-            string tooltip = "";
+			bool doTooltip = _setting_showHoverTooltip
+							 && ( !_setting_showHoverTooltipShift || ( Event.current.modifiers & EventModifiers.Shift   ) != 0 )
+							 && ( !_setting_showHoverTooltipCtrl  || ( Event.current.modifiers & EventModifiers.Control ) != 0 )
+							 && ( !_setting_showHoverTooltipAlt   || ( Event.current.modifiers & EventModifiers.Alt     ) != 0 );
 
-			Color originalColor = GUI.color;
+			bool doComponents = _setting_showComponents
+							 && ( !_setting_showComponentsShift || ( Event.current.modifiers & EventModifiers.Shift ) != 0 )
+							 && ( !_setting_showComponentsCtrl || ( Event.current.modifiers & EventModifiers.Control ) != 0 )
+							 && ( !_setting_showComponentsAlt || ( Event.current.modifiers & EventModifiers.Alt ) != 0 );
 
-			float width = EditorStyles.label.CalcSize( new GUIContent( gameObject.name ) ).x;
+			bool doLockIcon = _setting_showLock
+							 && ( !_setting_showLockShift  || ( Event.current.modifiers & EventModifiers.Shift   ) != 0 )
+							 && ( !_setting_showLockCtrl   || ( Event.current.modifiers & EventModifiers.Control ) != 0 )
+							 && ( !_setting_showLockAlt    || ( Event.current.modifiers & EventModifiers.Alt     ) != 0 );
 
-			if( (( 1 << gameObject.layer ) & Tools.visibleLayers) == 0 )
-			{
-				Rect labelRect = pDrawingRect;
-				labelRect.width = width;
-				labelRect.x-=2;
-				labelRect.y-=4;
-				GUI.Label( labelRect, "".PadRight( gameObject.name.Length, '_' ) );
-			}
+			doLockIcon |= _setting_showLock && _setting_showLockLocked && currentLock;
 
-			if( doTooltip )
-			{
-				tooltip = GetTooltip(gameObject);
-				if (tooltip.Length > 0)
-					GUI.Label(pDrawingRect, new GUIContent(" ", tooltip));
-			}
 
-			Rect iconRect = pDrawingRect;
-			iconRect.x = pDrawingRect.x + pDrawingRect.width - 16;
-			iconRect.y--;
-			iconRect.width = 16;
-			iconRect.height = 16;
+		    string tooltip = "";
 
-			_mousePosition = new Vector2( Event.current.mousePosition.x + Common.HierarchyWindow.position.x, Event.current.mousePosition.y + Common.HierarchyWindow.position.y );
+		    Color originalColor = GUI.color;
 
-			bool mouseIn = pDrawingRect.Contains( Event.current.mousePosition );
+			if( doLockIcon )
+		    {
+			    Rect r = pDrawingRect;
+			    r.x = r.x + r.width - 14;
+			    r.width = 12;
 
-			if( doPreview && mouseIn )
-				_hoverObject = gameObject;
+			    GUI.color = currentLock ? new Color(1,1,1,1) : new Color(1,1,1,0.4f);
 
-			Object dragging = DragAndDrop.objectReferences.Length == 1 ? DragAndDrop.objectReferences[0] : null;
+				bool newLock = GUI.Toggle( r, currentLock, "", (GUIStyle) "IN LockButton" );
+			    if( newLock != currentLock )
+			    {
+				    if( newLock )
+					    gameObject.hideFlags |= HideFlags.NotEditable;
+				    else
+					    gameObject.hideFlags -= HideFlags.NotEditable;
+			    }
 
-			if( DragAndDrop.objectReferences.Length == 1 && _setting_showHoverDropWindow && mouseIn )
-			{
-				if (_draggingHeldOver == null)
-				    _draggingHeldStart = System.DateTime.Now;
+			    pDrawingRect.width -= 14;
+		    }
 
-				if (_draggingHeldOver != gameObject)
-				    _draggingShownQuickInspector = false;
+		    float width = EditorStyles.label.CalcSize( new GUIContent( gameObject.name ) ).x;
 
-				_draggingHeldOver = gameObject;
-			}
+		    if( ( ( 1 << gameObject.layer ) & Tools.visibleLayers ) == 0 )
+		    {
+			    Rect labelRect = pDrawingRect;
+			    labelRect.width = width;
+			    labelRect.x -= 2;
+			    labelRect.y -= 4;
+			    GUI.Label( labelRect, "".PadRight( gameObject.name.Length, '_' ) );
+		    }
 
-			bool suitableDrop = false;
-			bool drawnEtc = false;
+		    if( doTooltip )
+		    {
+			    tooltip = GetTooltip( gameObject );
+			    if( tooltip.Length > 0 )
+				    GUI.Label( pDrawingRect, new GUIContent( " ", tooltip ) );
+		    }
 
-			foreach( Component c in gameObject.GetComponents<Component>() )
-			{
-				if( c is Transform )
-					continue;
+			if( doComponents )
+		    {
+			    Rect iconRect = pDrawingRect;
+			    iconRect.x = pDrawingRect.x + pDrawingRect.width - 16;
+			    iconRect.y--;
+			    iconRect.width = 16;
+			    iconRect.height = 16;
 
-				if( c != null && !suitableDrop && dragging != null )
+			    _mousePosition = new Vector2( Event.current.mousePosition.x + Common.HierarchyWindow.position.x, Event.current.mousePosition.y + Common.HierarchyWindow.position.y );
+
+			    bool mouseIn = pDrawingRect.Contains( Event.current.mousePosition );
+
+			    if( doPreview && mouseIn )
+				    _hoverObject = gameObject;
+
+			    Object dragging = DragAndDrop.objectReferences.Length == 1 ? DragAndDrop.objectReferences[ 0 ] : null;
+
+			    if( DragAndDrop.objectReferences.Length == 1 && _setting_showHoverDropWindow && mouseIn )
+			    {
+				    if( _draggingHeldOver == null )
+					    _draggingHeldStart = System.DateTime.Now;
+
+				    if( _draggingHeldOver != gameObject )
+					    _draggingShownQuickInspector = false;
+
+				    _draggingHeldOver = gameObject;
+			    }
+
+			    bool suitableDrop = false;
+			    bool drawnEtc = false;
+
+			    foreach( Component c in gameObject.GetComponents<Component>() )
+			    {
+				    if( c is Transform )
+					    continue;
+
+				    if( c != null && !suitableDrop && dragging != null )
+				    {
+					    Type type = c.GetType();
+					    foreach( FieldInfo f in TeneDropTarget.FieldsFor( type ) )
+						    if( TeneDropTarget.IsCompatibleField( f, dragging ) )
+						    {
+							    suitableDrop = true;
+							    break;
+						    }
+				    }
+
+				    if( c == null )
+				    {
+					    Rect rectX = new Rect( iconRect.x + 4, iconRect.y + 1, 14, iconRect.height );
+					    GUI.color = new Color( 1.0f, 0.35f, 0.35f, 1.0f );
+					    GUI.Label( rectX, new GUIContent( "X", "Missing Script" ), Common.ColorLabel( new Color( 1.0f, 0.35f, 0.35f, 1.0f ) ) );
+					    iconRect.x -= 9;
+
+					    if( rectX.Contains( Event.current.mousePosition ) )
+						    _hoverObject = null;
+
+					    continue;
+				    }
+
+				    GUI.color = c.GetEnabled() ? Color.white : new Color( 0.5f, 0.5f, 0.5f, 0.5f );
+
+				    if( iconRect.x < pDrawingRect.x + width )
+				    {
+					    if( !drawnEtc )
+					    {
+						    GUI.Label( iconRect, " .." );
+						    drawnEtc = true;
+					    }
+					    continue;
+				    }
+
+				    if( doTooltip )
+					    tooltip = GetTooltip( c );
+
+				    Texture iconTexture = null;
+
+				    if( c is MonoBehaviour )
+				    {
+					    MonoScript ms = MonoScript.FromMonoBehaviour( c as MonoBehaviour );
+					    iconTexture = AssetDatabase.GetCachedIcon( AssetDatabase.GetAssetPath( ms ) );
+				    }
+
+				    if( iconTexture == null )
+					    iconTexture = Common.GetMiniThumbnail( c );
+
+				    if( iconTexture != null )
+				    {
+					    if( doPreview )
+						    if( iconRect.Contains( Event.current.mousePosition ) )
+							    _hoverObject = c;
+
+					    GUI.DrawTexture( iconRect, iconTexture, ScaleMode.ScaleToFit );
+					    if( GUI.Button( iconRect, new GUIContent( "", tooltip ), EditorStyles.label ) )
+					    {
+						    c.SetEnabled( !c.GetEnabled() );
+						    Common.HierarchyWindow.Repaint();
+						    return;
+					    }
+					    iconRect.x -= iconRect.width;
+				    }
+			    }
+
+				if( suitableDrop )
 				{
-					Type type = c.GetType();
-					foreach( FieldInfo f in TeneDropTarget.FieldsFor( type ) )
-						if( TeneDropTarget.IsCompatibleField( f, dragging ) )
-						{
-							suitableDrop = true;
-							break;
-						}
+					Rect labelRect = pDrawingRect;
+
+					labelRect.width = width;
+					labelRect.x -= 2;
+					labelRect.y += 1;
+
+					GUI.color = Color.white;
+					GUI.DrawTexture( new Rect( labelRect.x, labelRect.y, labelRect.width, 1 ), EditorGUIUtility.whiteTexture );
+					GUI.DrawTexture( new Rect( labelRect.x, labelRect.y, 1, labelRect.height ), EditorGUIUtility.whiteTexture );
+					GUI.DrawTexture( new Rect( labelRect.x, labelRect.yMax, labelRect.width, 1 ), EditorGUIUtility.whiteTexture );
+					GUI.DrawTexture( new Rect( labelRect.xMax, labelRect.y, 1, labelRect.height ), EditorGUIUtility.whiteTexture );
+
+					if( mouseIn )
+						DragAndDrop.visualMode = DragAndDropVisualMode.Generic;
 				}
-
-				if( c == null )
-				{
-					Rect rectX = new Rect( iconRect.x + 4, iconRect.y + 1, 14, iconRect.height );
-					GUI.color = new Color( 1.0f, 0.35f, 0.35f, 1.0f );
-					GUI.Label( rectX, new GUIContent( "X", "Missing Script" ), Common.ColorLabel( new Color( 1.0f, 0.35f, 0.35f, 1.0f ) ) );
-					iconRect.x -= 9;
-
-					if( rectX.Contains( Event.current.mousePosition ) )
-						_hoverObject = null;
-
-					continue;
-				}
-
-				GUI.color = c.GetEnabled() ? Color.white : new Color( 0.5f, 0.5f, 0.5f, 0.5f );
-
-				if( iconRect.x < pDrawingRect.x + width )
-				{
-					if( !drawnEtc )
-					{
-						GUI.Label( iconRect, " .." );
-						drawnEtc = true;
-					}
-					continue;
-				}
-
-				if( doTooltip )
- 					tooltip = GetTooltip(c);
-
-				Texture iconTexture = null;
-
-				if( c is MonoBehaviour )
-				{
-					MonoScript ms = MonoScript.FromMonoBehaviour( c as MonoBehaviour );
-					iconTexture = AssetDatabase.GetCachedIcon( AssetDatabase.GetAssetPath( ms ) );
-				}
-
-				if( iconTexture == null )
-					iconTexture = Common.GetMiniThumbnail( c );
-
-				if( iconTexture != null )
-				{
-					if( doPreview )
-						if( iconRect.Contains( Event.current.mousePosition ) )
-							_hoverObject = c;
-
-					GUI.DrawTexture( iconRect, iconTexture, ScaleMode.ScaleToFit );
-					if( GUI.Button( iconRect, new GUIContent( "", tooltip ), EditorStyles.label ) )
-					{
-						c.SetEnabled( !c.GetEnabled() );
-						Common.HierarchyWindow.Repaint();
-						return;
-					}
-					iconRect.x -= iconRect.width;
-				}
-			}
-
-			if( suitableDrop )
-			{
-				Rect labelRect = pDrawingRect;
-				
-				labelRect.width = width;
-				labelRect.x -= 2;
-				labelRect.y += 1;
-
-				GUI.color = Color.white;
-				GUI.DrawTexture( new Rect( labelRect.x, labelRect.y, labelRect.width, 1 ), EditorGUIUtility.whiteTexture );
-				GUI.DrawTexture( new Rect( labelRect.x, labelRect.y, 1, labelRect.height ), EditorGUIUtility.whiteTexture );
-				GUI.DrawTexture( new Rect( labelRect.x, labelRect.yMax, labelRect.width, 1 ), EditorGUIUtility.whiteTexture );
-				GUI.DrawTexture( new Rect( labelRect.xMax, labelRect.y, 1, labelRect.height ), EditorGUIUtility.whiteTexture );
-
-				if( mouseIn )
-					DragAndDrop.visualMode = DragAndDropVisualMode.Generic;
-			}
-
+		    }
+	
 			GUI.color = originalColor;
 		}
 
@@ -366,47 +424,88 @@ namespace Tenebrous.EditorEnhancements
 		public override void DrawPreferences()
 		{
             EditorGUILayout.BeginHorizontal();
+				EditorGUILayout.Space();
+				_setting_showHoverPreview = GUILayout.Toggle( _setting_showHoverPreview, "" );
+				GUILayout.Label( "Asset preview on hover", GUILayout.Width( 176 ) );
 
-            GUILayout.Label( "Asset preview on hover", GUILayout.Width( 176 ) );
+				if( _setting_showHoverPreview )
+				{
+					EditorGUILayout.Space();
+					_setting_showHoverPreviewShift = GUILayout.Toggle( _setting_showHoverPreviewShift, "shift" );
+					EditorGUILayout.Space();
+					_setting_showHoverPreviewCtrl = GUILayout.Toggle( _setting_showHoverPreviewCtrl, "ctrl" );
+					EditorGUILayout.Space();
+					_setting_showHoverPreviewAlt = GUILayout.Toggle( _setting_showHoverPreviewAlt, "alt" );
+				}
 
-            _setting_showHoverPreview = GUILayout.Toggle( _setting_showHoverPreview, "" );
-
-            if( _setting_showHoverPreview )
-            {
-                EditorGUILayout.Space();
-                _setting_showHoverPreviewShift = GUILayout.Toggle( _setting_showHoverPreviewShift, "shift" );
-                EditorGUILayout.Space();
-                _setting_showHoverPreviewCtrl = GUILayout.Toggle( _setting_showHoverPreviewCtrl, "ctrl" );
-                EditorGUILayout.Space();
-                _setting_showHoverPreviewAlt = GUILayout.Toggle( _setting_showHoverPreviewAlt, "alt" );
-            }
-
-            GUILayout.FlexibleSpace();
-
+				GUILayout.FlexibleSpace();
             EditorGUILayout.EndHorizontal();
 
 
-            EditorGUILayout.BeginHorizontal();
+			EditorGUILayout.BeginHorizontal();
+				EditorGUILayout.Space();
+				_setting_showHoverTooltip = GUILayout.Toggle( _setting_showHoverTooltip, "" );
+				GUILayout.Label( "Asset tooltip on hover", GUILayout.Width( 176 ) );
 
-            GUILayout.Label( "Asset tooltip on hover", GUILayout.Width( 176 ) );
+				if( _setting_showHoverTooltip )
+				{
+					EditorGUILayout.Space();
+					_setting_showHoverTooltipShift = GUILayout.Toggle( _setting_showHoverTooltipShift, "shift" );
+					EditorGUILayout.Space();
+					_setting_showHoverTooltipCtrl = GUILayout.Toggle( _setting_showHoverTooltipCtrl, "ctrl" );
+					EditorGUILayout.Space();
+					_setting_showHoverTooltipAlt = GUILayout.Toggle( _setting_showHoverTooltipAlt, "alt" );
+				}
 
-            _setting_showHoverTooltip = GUILayout.Toggle( _setting_showHoverTooltip, "" );
+				GUILayout.FlexibleSpace();
+			EditorGUILayout.EndHorizontal();
 
-            if( _setting_showHoverTooltip )
-            {
-                EditorGUILayout.Space();
-                _setting_showHoverTooltipShift = GUILayout.Toggle( _setting_showHoverTooltipShift, "shift" );
-                EditorGUILayout.Space();
-                _setting_showHoverTooltipCtrl = GUILayout.Toggle( _setting_showHoverTooltipCtrl, "ctrl" );
-                EditorGUILayout.Space();
-                _setting_showHoverTooltipAlt = GUILayout.Toggle( _setting_showHoverTooltipAlt, "alt" );
-            }
 
-            GUILayout.FlexibleSpace();
+			EditorGUILayout.BeginHorizontal();
+				EditorGUILayout.Space();
+				_setting_showComponents = GUILayout.Toggle( _setting_showComponents, "" );
+				GUILayout.Label( "Show component icons", GUILayout.Width( 176 ) );
 
-            EditorGUILayout.EndHorizontal();
+				if( _setting_showComponents )
+				{
+					EditorGUILayout.Space();
+					_setting_showComponentsShift = GUILayout.Toggle( _setting_showComponentsShift, "shift" );
+					EditorGUILayout.Space();
+					_setting_showComponentsCtrl = GUILayout.Toggle( _setting_showComponentsCtrl, "ctrl" );
+					EditorGUILayout.Space();
+					_setting_showComponentsAlt = GUILayout.Toggle( _setting_showComponentsAlt, "alt" );
+				}
 
-		    _setting_showHoverDropWindow = EditorGUILayout.Toggle( "Quick-drop window", _setting_showHoverDropWindow );
+				GUILayout.FlexibleSpace();
+			EditorGUILayout.EndHorizontal();
+
+
+			EditorGUILayout.BeginHorizontal();
+				EditorGUILayout.Space();
+				_setting_showLock = GUILayout.Toggle( _setting_showLock, "" );
+				GUILayout.Label( "Show lock icon", GUILayout.Width( 110 ) );
+
+				if( _setting_showLock )
+				{
+					EditorGUILayout.Space();
+					_setting_showLockLocked = GUILayout.Toggle( _setting_showLockLocked, "locked" );
+					EditorGUILayout.Space();
+					_setting_showLockShift = GUILayout.Toggle( _setting_showLockShift, "shift" );
+					EditorGUILayout.Space();
+					_setting_showLockCtrl = GUILayout.Toggle( _setting_showLockCtrl, "ctrl" );
+					EditorGUILayout.Space();
+					_setting_showLockAlt = GUILayout.Toggle( _setting_showLockAlt, "alt" );
+				}
+
+				GUILayout.FlexibleSpace();
+			EditorGUILayout.EndHorizontal();
+
+			EditorGUILayout.BeginHorizontal();
+				EditorGUILayout.Space();
+				_setting_showHoverDropWindow = GUILayout.Toggle( _setting_showHoverDropWindow, "" );
+				GUILayout.Label( "Quick-drop window", GUILayout.Width( 176 ) );
+				GUILayout.FlexibleSpace();
+			EditorGUILayout.EndHorizontal();
 
 		    if( GUI.changed )
 		    {
@@ -417,30 +516,52 @@ namespace Tenebrous.EditorEnhancements
 
 		public void ReadSettings()
 		{
-            _setting_showHoverPreview = EditorPrefs.GetBool( "TeneHierarchyWindow_PreviewOnHover", Defaults.HierarchyWindowHoverPreview );
+            _setting_showHoverPreview      = EditorPrefs.GetBool( "TeneHierarchyWindow_PreviewOnHover",      Defaults.HierarchyWindowHoverPreview );
             _setting_showHoverPreviewShift = EditorPrefs.GetBool( "TeneHierarchyWindow_PreviewOnHoverShift", Defaults.HierarchyWindowHoverPreviewShift );
-            _setting_showHoverPreviewCtrl = EditorPrefs.GetBool( "TeneHierarchyWindow_PreviewOnHoverCtrl", Defaults.HierarchyWindowHoverPreviewCtrl );
-            _setting_showHoverPreviewAlt = EditorPrefs.GetBool( "TeneHierarchyWindow_PreviewOnHoverAlt", Defaults.HierarchyWindowHoverPreviewAlt );
+            _setting_showHoverPreviewCtrl  = EditorPrefs.GetBool( "TeneHierarchyWindow_PreviewOnHoverCtrl",  Defaults.HierarchyWindowHoverPreviewCtrl );
+            _setting_showHoverPreviewAlt   = EditorPrefs.GetBool( "TeneHierarchyWindow_PreviewOnHoverAlt",   Defaults.HierarchyWindowHoverPreviewAlt );
 
-            _setting_showHoverTooltip = EditorPrefs.GetBool( "TeneHierarchyWindow_HoverTooltip", Defaults.HierarchyWindowHoverTooltip );
-            _setting_showHoverTooltipShift = EditorPrefs.GetBool( "TeneHierarchyWindow_HoverTooltipShift", Defaults.HierarchyWindowHoverTooltipShift );
-            _setting_showHoverTooltipCtrl = EditorPrefs.GetBool( "TeneHierarchyWindow_HoverTooltipCtrl", Defaults.HierarchyWindowHoverTooltipCtrl );
-            _setting_showHoverTooltipAlt = EditorPrefs.GetBool( "TeneHierarchyWindow_HoverTooltipAlt", Defaults.HierarchyWindowHoverTooltipAlt );
+			_setting_showHoverTooltip      = EditorPrefs.GetBool( "TeneHierarchyWindow_HoverTooltip",      Defaults.HierarchyWindowHoverTooltip );
+			_setting_showHoverTooltipShift = EditorPrefs.GetBool( "TeneHierarchyWindow_HoverTooltipShift", Defaults.HierarchyWindowHoverTooltipShift );
+			_setting_showHoverTooltipCtrl  = EditorPrefs.GetBool( "TeneHierarchyWindow_HoverTooltipCtrl",  Defaults.HierarchyWindowHoverTooltipCtrl );
+			_setting_showHoverTooltipAlt   = EditorPrefs.GetBool( "TeneHierarchyWindow_HoverTooltipAlt",   Defaults.HierarchyWindowHoverTooltipAlt );
+
+			_setting_showComponents      = EditorPrefs.GetBool( "TeneHierarchyWindow_Components",      Defaults.HierarchyWindowComponents );
+			_setting_showComponentsShift = EditorPrefs.GetBool( "TeneHierarchyWindow_ComponentsShift", Defaults.HierarchyWindowComponentsShift );
+			_setting_showComponentsCtrl  = EditorPrefs.GetBool( "TeneHierarchyWindow_ComponentsCtrl",  Defaults.HierarchyWindowComponentsCtrl );
+			_setting_showComponentsAlt   = EditorPrefs.GetBool( "TeneHierarchyWindow_ComponentsAlt",   Defaults.HierarchyWindowComponentsAlt );
+
+			_setting_showLock            = EditorPrefs.GetBool( "TeneHierarchyWindow_Lock",      Defaults.HierarchyWindowLock );
+			_setting_showLockLocked      = EditorPrefs.GetBool( "TeneHierarchyWindow_LockLocked",Defaults.HierarchyWindowLockLocked );
+			_setting_showLockShift       = EditorPrefs.GetBool( "TeneHierarchyWindow_LockShift", Defaults.HierarchyWindowLockShift );
+			_setting_showLockCtrl        = EditorPrefs.GetBool( "TeneHierarchyWindow_LockCtrl",  Defaults.HierarchyWindowLockCtrl );
+			_setting_showLockAlt         = EditorPrefs.GetBool( "TeneHierarchyWindow_LockAlt",   Defaults.HierarchyWindowLockAlt );
 
             _setting_showHoverDropWindow = EditorPrefs.GetBool( "TeneHierarchyWindow_HoverDropWindow", Defaults.HierarchyWindowHoverDropWindow );
 		}
 
 		private void SaveSettings()
 		{
-			EditorPrefs.SetBool( "TeneHierarchyWindow_PreviewOnHover", _setting_showHoverPreview );
+			EditorPrefs.SetBool( "TeneHierarchyWindow_PreviewOnHover",      _setting_showHoverPreview );
 			EditorPrefs.SetBool( "TeneHierarchyWindow_PreviewOnHoverShift", _setting_showHoverPreviewShift );
-			EditorPrefs.SetBool( "TeneHierarchyWindow_PreviewOnHoverCtrl", _setting_showHoverPreviewCtrl );
-			EditorPrefs.SetBool( "TeneHierarchyWindow_PreviewOnHoverAlt", _setting_showHoverPreviewAlt );
+			EditorPrefs.SetBool( "TeneHierarchyWindow_PreviewOnHoverCtrl",  _setting_showHoverPreviewCtrl );
+			EditorPrefs.SetBool( "TeneHierarchyWindow_PreviewOnHoverAlt",   _setting_showHoverPreviewAlt );
 
-			EditorPrefs.SetBool( "TeneHierarchyWindow_HoverTooltip", _setting_showHoverTooltip );
+			EditorPrefs.SetBool( "TeneHierarchyWindow_HoverTooltip",      _setting_showHoverTooltip );
             EditorPrefs.SetBool( "TeneHierarchyWindow_HoverTooltipShift", _setting_showHoverTooltipShift );
-            EditorPrefs.SetBool( "TeneHierarchyWindow_HoverTooltipCtrl", _setting_showHoverTooltipCtrl );
-            EditorPrefs.SetBool( "TeneHierarchyWindow_HoverTooltipAlt", _setting_showHoverTooltipAlt );
+            EditorPrefs.SetBool( "TeneHierarchyWindow_HoverTooltipCtrl",  _setting_showHoverTooltipCtrl );
+            EditorPrefs.SetBool( "TeneHierarchyWindow_HoverTooltipAlt",   _setting_showHoverTooltipAlt );
+
+			EditorPrefs.SetBool( "TeneHierarchyWindow_Components",      _setting_showComponents );
+            EditorPrefs.SetBool( "TeneHierarchyWindow_ComponentsShift", _setting_showComponentsShift );
+            EditorPrefs.SetBool( "TeneHierarchyWindow_ComponentsCtrl",  _setting_showComponentsCtrl );
+            EditorPrefs.SetBool( "TeneHierarchyWindow_ComponentsAlt",   _setting_showComponentsAlt );
+
+			EditorPrefs.SetBool( "TeneHierarchyWindow_Lock",      _setting_showLock       );     
+			EditorPrefs.SetBool( "TeneHierarchyWindow_LockLocked",_setting_showLockLocked );     
+			EditorPrefs.SetBool( "TeneHierarchyWindow_LockShift", _setting_showLockShift  );     
+			EditorPrefs.SetBool( "TeneHierarchyWindow_LockCtrl",  _setting_showLockCtrl   );     
+			EditorPrefs.SetBool( "TeneHierarchyWindow_LockAlt",   _setting_showLockAlt    );     
 
             EditorPrefs.SetBool( "TeneHierarchyWindow_HoverDropWindow", _setting_showHoverDropWindow );
 		}
