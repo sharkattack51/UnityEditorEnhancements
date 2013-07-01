@@ -545,38 +545,57 @@ namespace Tenebrous.EditorEnhancements
 			}
 		}
 
-		private void ReadSettings()
+		private void ConvertOldSettings()
 		{
-			//string colourinfo;
+			// update old prefs to new format, whenever we change how we use them
 
             if( EditorPrefs.HasKey( "TeneProjectWindow_All" ) )
             {
-                _setting_showExtensionsWhen = EditorPrefs.GetBool( "TeneProjectWindow_All", true ) ? ShowExtensions.Always : ShowExtensions.OnlyWhenConflicts;
+				EditorPrefs.SetInt( "TeneProjectWindow_WhenExtensions", 
+								    (int)(EditorPrefs.GetBool( "TeneProjectWindow_All", true ) ? ShowExtensions.Always : ShowExtensions.OnlyWhenConflicts) );
                 EditorPrefs.DeleteKey( "TeneProjectWindow_All" );
             }
-            else
-            {
-                _setting_showExtensionsWhen = (ShowExtensions)EditorPrefs.GetInt( "TeneProjectWindow_WhenExtensions", (int)Defaults.ProjectWindowExtensionsWhen );
-            }
-            _setting_showFileCount = EditorPrefs.GetBool( "TeneProjectWindow_FileCount", Defaults.ProjectWindowFileCount );
+
+			if( EditorPrefs.HasKey( "TeneProjectWindow_WhenExtensions" ) )
+			{
+				Main.Int [ this, "WhenExtensions"     ] = EditorPrefs.GetInt ( "TeneProjectWindow_WhenExtensions",      (int)Defaults.ProjectWindowExtensionsWhen );
+				Main.Bool[ this, "FileCount"          ] = EditorPrefs.GetBool( "TeneProjectWindow_FileCount",           Defaults.ProjectWindowFileCount );
+				Main.Bool[ this, "PreviewOnHover"     ] = EditorPrefs.GetBool( "TeneProjectWindow_PreviewOnHover",      Defaults.ProjectWindowHoverPreview );
+				Main.Bool[ this, "PreviewOnHoverShift"] = EditorPrefs.GetBool( "TeneProjectWindow_PreviewOnHoverShift", Defaults.ProjectWindowHoverPreviewShift );
+				Main.Bool[ this, "PreviewOnHoverCtrl" ] = EditorPrefs.GetBool( "TeneProjectWindow_PreviewOnHoverCtrl",  Defaults.ProjectWindowHoverPreviewCtrl );
+				Main.Bool[ this, "PreviewOnHoverAlt"  ] = EditorPrefs.GetBool( "TeneProjectWindow_PreviewOnHoverAlt",   Defaults.ProjectWindowHoverPreviewAlt );
+				Main.Bool[ this, "HoverTooltip"       ] = EditorPrefs.GetBool( "TeneProjectWindow_HoverTooltip",        Defaults.ProjectWindowHoverTooltip );
+				Main.Bool[ this, "HoverTooltipShift"  ] = EditorPrefs.GetBool( "TeneProjectWindow_HoverTooltipShift",   Defaults.ProjectWindowHoverTooltipShift );
+				Main.Bool[ this, "HoverTooltipCtrl"   ] = EditorPrefs.GetBool( "TeneProjectWindow_HoverTooltipCtrl",    Defaults.ProjectWindowHoverTooltipCtrl );
+				Main.Bool[ this, "HoverTooltipAlt"    ] = EditorPrefs.GetBool( "TeneProjectWindow_HoverTooltipAlt",     Defaults.ProjectWindowHoverTooltipAlt );
+				EditorPrefs.DeleteKey( "TeneProjectWindow_WhenExtensions" );
+			}
+		}
+
+		private void ReadSettings()
+		{
+			//string colourinfo;
+			ConvertOldSettings();
+
+			_setting_showExtensionsWhen    = (ShowExtensions)Main.Int[this, "WhenExtensions", (int)Defaults.ProjectWindowExtensionsWhen];
+			_setting_showFileCount         = Main.Bool[this, "FileCount",           Defaults.ProjectWindowFileCount];
+
+			_setting_showHoverPreview      = Main.Bool[this, "PreviewOnHover",      Defaults.ProjectWindowHoverPreview];
+            _setting_showHoverPreviewShift = Main.Bool[this, "PreviewOnHoverShift", Defaults.ProjectWindowHoverPreviewShift ];
+            _setting_showHoverPreviewCtrl  = Main.Bool[this, "PreviewOnHoverCtrl",  Defaults.ProjectWindowHoverPreviewCtrl ];
+            _setting_showHoverPreviewAlt   = Main.Bool[this, "PreviewOnHoverAlt",   Defaults.ProjectWindowHoverPreviewAlt ];
+
+            _setting_showHoverTooltip      = Main.Bool[this, "HoverTooltip",        Defaults.ProjectWindowHoverTooltip ];
+            _setting_showHoverTooltipShift = Main.Bool[this, "HoverTooltipShift",   Defaults.ProjectWindowHoverTooltipShift ];
+            _setting_showHoverTooltipCtrl  = Main.Bool[this, "HoverTooltipCtrl",    Defaults.ProjectWindowHoverTooltipCtrl ];
+            _setting_showHoverTooltipAlt   = Main.Bool[this, "HoverTooltipAlt",     Defaults.ProjectWindowHoverTooltipAlt ];
 
 			//string colormap = Common.GetLongPref("TeneProjectWindow_ColorMap");
-
-            _setting_showHoverPreview = EditorPrefs.GetBool( "TeneProjectWindow_PreviewOnHover", Defaults.ProjectWindowHoverPreview );
-            _setting_showHoverPreviewShift = EditorPrefs.GetBool( "TeneProjectWindow_PreviewOnHoverShift", Defaults.ProjectWindowHoverPreviewShift );
-            _setting_showHoverPreviewCtrl = EditorPrefs.GetBool( "TeneProjectWindow_PreviewOnHoverCtrl", Defaults.ProjectWindowHoverPreviewCtrl );
-            _setting_showHoverPreviewAlt = EditorPrefs.GetBool( "TeneProjectWindow_PreviewOnHoverAlt", Defaults.ProjectWindowHoverPreviewAlt );
-
-            _setting_showHoverTooltip = EditorPrefs.GetBool( "TeneProjectWindow_HoverTooltip", Defaults.ProjectWindowHoverTooltip );
-            _setting_showHoverTooltipShift = EditorPrefs.GetBool( "TeneProjectWindow_HoverTooltipShift", Defaults.ProjectWindowHoverTooltipShift );
-            _setting_showHoverTooltipCtrl = EditorPrefs.GetBool( "TeneProjectWindow_HoverTooltipCtrl", Defaults.ProjectWindowHoverTooltipCtrl );
-            _setting_showHoverTooltipAlt = EditorPrefs.GetBool( "TeneProjectWindow_HoverTooltipAlt", Defaults.ProjectWindowHoverTooltipAlt );
         }
 
 		private void SaveSettings()
 		{
-			EditorPrefs.SetInt( "TeneProjectWindow_WhenExtensions", (int)_setting_showExtensionsWhen );
-			EditorPrefs.SetBool( "TeneProjectWindow_FileCount", _setting_showFileCount );
+			Main.Int[ this, "WhenExtensions" ] = (int)_setting_showExtensionsWhen;
 
 			string colormap = "";
 			foreach( KeyValuePair<string, Color> entry in _colorMap )
@@ -584,15 +603,15 @@ namespace Tenebrous.EditorEnhancements
 
 			Common.SetLongPref( "TeneProjectWindow_ColorMap", colormap );
 
-			EditorPrefs.SetBool( "TeneProjectWindow_PreviewOnHover", _setting_showHoverPreview );
-			EditorPrefs.SetBool( "TeneProjectWindow_PreviewOnHoverShift", _setting_showHoverPreviewShift );
-			EditorPrefs.SetBool( "TeneProjectWindow_PreviewOnHoverCtrl", _setting_showHoverPreviewCtrl );
-			EditorPrefs.SetBool( "TeneProjectWindow_PreviewOnHoverAlt", _setting_showHoverPreviewAlt );
-
-			EditorPrefs.SetBool( "TeneProjectWindow_HoverTooltip", _setting_showHoverTooltip );
-            EditorPrefs.SetBool( "TeneProjectWindow_HoverTooltipShift", _setting_showHoverTooltipShift );
-            EditorPrefs.SetBool( "TeneProjectWindow_HoverTooltipCtrl", _setting_showHoverTooltipCtrl );
-            EditorPrefs.SetBool( "TeneProjectWindow_HoverTooltipAlt", _setting_showHoverTooltipAlt );
+			Main.Bool[ this, "FileCount"           ] = _setting_showFileCount;
+			Main.Bool[ this, "PreviewOnHover"      ] = _setting_showHoverPreview;
+			Main.Bool[ this, "PreviewOnHoverShift" ] = _setting_showHoverPreviewShift;
+			Main.Bool[ this, "PreviewOnHoverCtrl"  ] = _setting_showHoverPreviewCtrl;
+			Main.Bool[ this, "PreviewOnHoverAlt"   ] = _setting_showHoverPreviewAlt;
+			Main.Bool[ this, "HoverTooltip"        ] = _setting_showHoverTooltip;
+            Main.Bool[ this, "HoverTooltipShift"   ] = _setting_showHoverTooltipShift;
+            Main.Bool[ this, "HoverTooltipCtrl"    ] = _setting_showHoverTooltipCtrl;
+            Main.Bool[ this, "HoverTooltipAlt"     ] = _setting_showHoverTooltipAlt;
         }
 	}
 

@@ -514,56 +514,91 @@ namespace Tenebrous.EditorEnhancements
 		    }
 		}
 
-		public void ReadSettings()
+		private void ConvertOldSettings()
 		{
-            _setting_showHoverPreview      = EditorPrefs.GetBool( "TeneHierarchyWindow_PreviewOnHover",      Defaults.HierarchyWindowHoverPreview );
-            _setting_showHoverPreviewShift = EditorPrefs.GetBool( "TeneHierarchyWindow_PreviewOnHoverShift", Defaults.HierarchyWindowHoverPreviewShift );
-            _setting_showHoverPreviewCtrl  = EditorPrefs.GetBool( "TeneHierarchyWindow_PreviewOnHoverCtrl",  Defaults.HierarchyWindowHoverPreviewCtrl );
-            _setting_showHoverPreviewAlt   = EditorPrefs.GetBool( "TeneHierarchyWindow_PreviewOnHoverAlt",   Defaults.HierarchyWindowHoverPreviewAlt );
+			// update old prefs to new format, whenever we change how we use them
 
-			_setting_showHoverTooltip      = EditorPrefs.GetBool( "TeneHierarchyWindow_HoverTooltip",      Defaults.HierarchyWindowHoverTooltip );
-			_setting_showHoverTooltipShift = EditorPrefs.GetBool( "TeneHierarchyWindow_HoverTooltipShift", Defaults.HierarchyWindowHoverTooltipShift );
-			_setting_showHoverTooltipCtrl  = EditorPrefs.GetBool( "TeneHierarchyWindow_HoverTooltipCtrl",  Defaults.HierarchyWindowHoverTooltipCtrl );
-			_setting_showHoverTooltipAlt   = EditorPrefs.GetBool( "TeneHierarchyWindow_HoverTooltipAlt",   Defaults.HierarchyWindowHoverTooltipAlt );
+			if( EditorPrefs.HasKey( "TeneHierarchyWindow_PreviewOnHover" ) )
+			{
+				Main.Bool[ this, "PreviewOnHover"      ] = EditorPrefs.GetBool( "TeneHierarchyWindow_PreviewOnHover",      Defaults.HierarchyWindowHoverPreview );
+				Main.Bool[ this, "PreviewOnHoverShift" ] = EditorPrefs.GetBool( "TeneHierarchyWindow_PreviewOnHoverShift", Defaults.HierarchyWindowHoverPreviewShift );
+				Main.Bool[ this, "PreviewOnHoverCtrl"  ] = EditorPrefs.GetBool( "TeneHierarchyWindow_PreviewOnHoverCtrl",  Defaults.HierarchyWindowHoverPreviewCtrl );
+				Main.Bool[ this, "PreviewOnHoverAlt"   ] = EditorPrefs.GetBool( "TeneHierarchyWindow_PreviewOnHoverAlt",   Defaults.HierarchyWindowHoverPreviewAlt );
 
-			_setting_showComponents      = EditorPrefs.GetBool( "TeneHierarchyWindow_Components",      Defaults.HierarchyWindowComponents );
-			_setting_showComponentsShift = EditorPrefs.GetBool( "TeneHierarchyWindow_ComponentsShift", Defaults.HierarchyWindowComponentsShift );
-			_setting_showComponentsCtrl  = EditorPrefs.GetBool( "TeneHierarchyWindow_ComponentsCtrl",  Defaults.HierarchyWindowComponentsCtrl );
-			_setting_showComponentsAlt   = EditorPrefs.GetBool( "TeneHierarchyWindow_ComponentsAlt",   Defaults.HierarchyWindowComponentsAlt );
+				Main.Bool[ this, "HoverTooltip"        ] = EditorPrefs.GetBool( "TeneHierarchyWindow_HoverTooltip",        Defaults.HierarchyWindowHoverTooltip );
+				Main.Bool[ this, "HoverTooltipShift"   ] = EditorPrefs.GetBool( "TeneHierarchyWindow_HoverTooltipShift",   Defaults.HierarchyWindowHoverTooltipShift );
+				Main.Bool[ this, "HoverTooltipCtrl"    ] = EditorPrefs.GetBool( "TeneHierarchyWindow_HoverTooltipCtrl",    Defaults.HierarchyWindowHoverTooltipCtrl );
+				Main.Bool[ this, "HoverTooltipAlt"     ] = EditorPrefs.GetBool( "TeneHierarchyWindow_HoverTooltipAlt",     Defaults.HierarchyWindowHoverTooltipAlt );
 
-			_setting_showLock            = EditorPrefs.GetBool( "TeneHierarchyWindow_Lock",      Defaults.HierarchyWindowLock );
-			_setting_showLockLocked      = EditorPrefs.GetBool( "TeneHierarchyWindow_LockLocked",Defaults.HierarchyWindowLockLocked );
-			_setting_showLockShift       = EditorPrefs.GetBool( "TeneHierarchyWindow_LockShift", Defaults.HierarchyWindowLockShift );
-			_setting_showLockCtrl        = EditorPrefs.GetBool( "TeneHierarchyWindow_LockCtrl",  Defaults.HierarchyWindowLockCtrl );
-			_setting_showLockAlt         = EditorPrefs.GetBool( "TeneHierarchyWindow_LockAlt",   Defaults.HierarchyWindowLockAlt );
+				Main.Bool[ this, "Components"          ] = EditorPrefs.GetBool( "TeneHierarchyWindow_Components",          Defaults.HierarchyWindowComponents );
+				Main.Bool[ this, "ComponentsShift"     ] = EditorPrefs.GetBool( "TeneHierarchyWindow_ComponentsShift",     Defaults.HierarchyWindowComponentsShift );
+				Main.Bool[ this, "ComponentsCtrl"      ] = EditorPrefs.GetBool( "TeneHierarchyWindow_ComponentsCtrl",      Defaults.HierarchyWindowComponentsCtrl );
+				Main.Bool[ this, "ComponentsAlt"       ] = EditorPrefs.GetBool( "TeneHierarchyWindow_ComponentsAlt",       Defaults.HierarchyWindowComponentsAlt );
 
-            _setting_showHoverDropWindow = EditorPrefs.GetBool( "TeneHierarchyWindow_HoverDropWindow", Defaults.HierarchyWindowHoverDropWindow );
+				Main.Bool[ this, "Lock"                ] = EditorPrefs.GetBool( "TeneHierarchyWindow_Lock",                Defaults.HierarchyWindowLock );
+				Main.Bool[ this, "LockLocked"          ] = EditorPrefs.GetBool( "TeneHierarchyWindow_LockLocked",          Defaults.HierarchyWindowLockLocked );
+				Main.Bool[ this, "LockShift"           ] = EditorPrefs.GetBool( "TeneHierarchyWindow_LockShift",           Defaults.HierarchyWindowLockShift );
+				Main.Bool[ this, "LockCtrl"            ] = EditorPrefs.GetBool( "TeneHierarchyWindow_LockCtrl",            Defaults.HierarchyWindowLockCtrl );
+				Main.Bool[ this, "LockAlt"             ] = EditorPrefs.GetBool( "TeneHierarchyWindow_LockAlt",             Defaults.HierarchyWindowLockAlt );
+
+				Main.Bool[ this, "HoverDropWindow"     ] = EditorPrefs.GetBool( "TeneHierarchyWindow_HoverDropWindow",     Defaults.HierarchyWindowHoverDropWindow );
+
+				EditorPrefs.DeleteKey( "TeneHierarchyWindow_PreviewOnHover" );
+			}
+		}
+
+		private void ReadSettings()
+		{
+			ConvertOldSettings();
+
+            _setting_showHoverPreview      = Main.Bool[ this, "PreviewOnHover",      Defaults.HierarchyWindowHoverPreview ];
+            _setting_showHoverPreviewShift = Main.Bool[ this, "PreviewOnHoverShift", Defaults.HierarchyWindowHoverPreviewShift ];
+            _setting_showHoverPreviewCtrl  = Main.Bool[ this, "PreviewOnHoverCtrl",  Defaults.HierarchyWindowHoverPreviewCtrl ];
+            _setting_showHoverPreviewAlt   = Main.Bool[ this, "PreviewOnHoverAlt",   Defaults.HierarchyWindowHoverPreviewAlt ];
+
+			_setting_showHoverTooltip      = Main.Bool[ this, "HoverTooltip",        Defaults.HierarchyWindowHoverTooltip ];
+			_setting_showHoverTooltipShift = Main.Bool[ this, "HoverTooltipShift",   Defaults.HierarchyWindowHoverTooltipShift ];
+			_setting_showHoverTooltipCtrl  = Main.Bool[ this, "HoverTooltipCtrl",    Defaults.HierarchyWindowHoverTooltipCtrl ];
+			_setting_showHoverTooltipAlt   = Main.Bool[ this, "HoverTooltipAlt",     Defaults.HierarchyWindowHoverTooltipAlt ];
+
+			_setting_showComponents        = Main.Bool[ this, "Components",          Defaults.HierarchyWindowComponents ];
+			_setting_showComponentsShift   = Main.Bool[ this, "ComponentsShift",     Defaults.HierarchyWindowComponentsShift ];
+			_setting_showComponentsCtrl    = Main.Bool[ this, "ComponentsCtrl",      Defaults.HierarchyWindowComponentsCtrl ];
+			_setting_showComponentsAlt     = Main.Bool[ this, "ComponentsAlt",       Defaults.HierarchyWindowComponentsAlt ];
+
+			_setting_showLock              = Main.Bool[ this, "Lock",                Defaults.HierarchyWindowLock ];
+			_setting_showLockLocked        = Main.Bool[ this, "LockLocked",          Defaults.HierarchyWindowLockLocked ];
+			_setting_showLockShift         = Main.Bool[ this, "LockShift",           Defaults.HierarchyWindowLockShift ];
+			_setting_showLockCtrl          = Main.Bool[ this, "LockCtrl",            Defaults.HierarchyWindowLockCtrl ];
+			_setting_showLockAlt           = Main.Bool[ this, "LockAlt",             Defaults.HierarchyWindowLockAlt ];
+
+			_setting_showHoverDropWindow   = Main.Bool[ this, "HoverDropWindow",     Defaults.HierarchyWindowHoverDropWindow ];
 		}
 
 		private void SaveSettings()
 		{
-			EditorPrefs.SetBool( "TeneHierarchyWindow_PreviewOnHover",      _setting_showHoverPreview );
-			EditorPrefs.SetBool( "TeneHierarchyWindow_PreviewOnHoverShift", _setting_showHoverPreviewShift );
-			EditorPrefs.SetBool( "TeneHierarchyWindow_PreviewOnHoverCtrl",  _setting_showHoverPreviewCtrl );
-			EditorPrefs.SetBool( "TeneHierarchyWindow_PreviewOnHoverAlt",   _setting_showHoverPreviewAlt );
+			Main.Bool[ this, "PreviewOnHover"      ] = _setting_showHoverPreview;
+			Main.Bool[ this, "PreviewOnHoverShift" ] = _setting_showHoverPreviewShift;
+			Main.Bool[ this, "PreviewOnHoverCtrl"  ] = _setting_showHoverPreviewCtrl;
+			Main.Bool[ this, "PreviewOnHoverAlt"   ] = _setting_showHoverPreviewAlt;
 
-			EditorPrefs.SetBool( "TeneHierarchyWindow_HoverTooltip",      _setting_showHoverTooltip );
-            EditorPrefs.SetBool( "TeneHierarchyWindow_HoverTooltipShift", _setting_showHoverTooltipShift );
-            EditorPrefs.SetBool( "TeneHierarchyWindow_HoverTooltipCtrl",  _setting_showHoverTooltipCtrl );
-            EditorPrefs.SetBool( "TeneHierarchyWindow_HoverTooltipAlt",   _setting_showHoverTooltipAlt );
-
-			EditorPrefs.SetBool( "TeneHierarchyWindow_Components",      _setting_showComponents );
-            EditorPrefs.SetBool( "TeneHierarchyWindow_ComponentsShift", _setting_showComponentsShift );
-            EditorPrefs.SetBool( "TeneHierarchyWindow_ComponentsCtrl",  _setting_showComponentsCtrl );
-            EditorPrefs.SetBool( "TeneHierarchyWindow_ComponentsAlt",   _setting_showComponentsAlt );
-
-			EditorPrefs.SetBool( "TeneHierarchyWindow_Lock",      _setting_showLock       );     
-			EditorPrefs.SetBool( "TeneHierarchyWindow_LockLocked",_setting_showLockLocked );     
-			EditorPrefs.SetBool( "TeneHierarchyWindow_LockShift", _setting_showLockShift  );     
-			EditorPrefs.SetBool( "TeneHierarchyWindow_LockCtrl",  _setting_showLockCtrl   );     
-			EditorPrefs.SetBool( "TeneHierarchyWindow_LockAlt",   _setting_showLockAlt    );     
-
-            EditorPrefs.SetBool( "TeneHierarchyWindow_HoverDropWindow", _setting_showHoverDropWindow );
+			Main.Bool[ this, "HoverTooltip"        ] = _setting_showHoverTooltip;
+            Main.Bool[ this, "HoverTooltipShift"   ] = _setting_showHoverTooltipShift;
+            Main.Bool[ this, "HoverTooltipCtrl"    ] = _setting_showHoverTooltipCtrl;
+            Main.Bool[ this, "HoverTooltipAlt"     ] = _setting_showHoverTooltipAlt;
+	
+			Main.Bool[ this, "Components"          ] = _setting_showComponents;
+            Main.Bool[ this, "ComponentsShift"     ] = _setting_showComponentsShift;
+            Main.Bool[ this, "ComponentsCtrl"      ] = _setting_showComponentsCtrl;
+            Main.Bool[ this, "ComponentsAlt"       ] = _setting_showComponentsAlt;
+			
+			Main.Bool[ this, "Lock"                ] = _setting_showLock;     
+			Main.Bool[ this, "LockLocked"          ] = _setting_showLockLocked;     
+			Main.Bool[ this, "LockShift"           ] = _setting_showLockShift;
+			Main.Bool[ this, "LockCtrl"            ] = _setting_showLockCtrl;
+			Main.Bool[ this, "LockAlt"             ] = _setting_showLockAlt;     
+            
+			Main.Bool[ this, "HoverDropWindow"     ] = _setting_showHoverDropWindow;
 		}
 	}
 
