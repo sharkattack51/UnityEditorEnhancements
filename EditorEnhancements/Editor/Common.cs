@@ -242,8 +242,10 @@ namespace Tenebrous.EditorEnhancements
 			UnityEngine.Object[] objectList = Resources.FindObjectsOfTypeAll( typeof( EditorWindow ) );
 
 			foreach( UnityEngine.Object obj in objectList )
-				if (obj.GetType().ToString() == pName)
-					return ((EditorWindow) obj);
+			{
+				if( obj.GetType().ToString() == pName )
+					return ( (EditorWindow)obj );
+			}
 
 			return ( null );
 		}
@@ -253,7 +255,7 @@ namespace Tenebrous.EditorEnhancements
 		{
 			get
 			{
-				_projectWindow = _projectWindow ?? GetWindowByName( "UnityEditor.ProjectWindow" ) ?? GetWindowByName( "UnityEditor.ObjectBrowser" );
+				_projectWindow = _projectWindow ?? GetWindowByName("UnityEditor.ProjectWindow") ?? GetWindowByName("UnityEditor.ObjectBrowser") ?? GetWindowByName("UnityEditor.ProjectBrowser");
 				return ( _projectWindow );
 			}
 		}
