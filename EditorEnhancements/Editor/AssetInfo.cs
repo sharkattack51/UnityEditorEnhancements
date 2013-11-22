@@ -97,12 +97,11 @@ namespace Tenebrous.EditorEnhancements
 
         public static string GetPreviewInfo(this Texture2D pObject)
         {
-            string info = "";
+            if( pObject != null )
+                return pObject.format.ToString() + "\n"
+                       + pObject.width + "x" + pObject.height;
 
-            info = pObject.format.ToString() + "\n"
-                   + pObject.width + "x" + pObject.height;
-
-            return (info);
+            return "";
         }
 
         public static string GetPreviewInfo(this Material pObject)
@@ -121,75 +120,72 @@ namespace Tenebrous.EditorEnhancements
 
         public static string GetPreviewInfo(this MeshFilter pObject)
         {
-            string info = "";
+            if( pObject != null && pObject.sharedMesh != null )
+                return pObject.sharedMesh.GetPreviewInfo();
 
-            if (pObject.sharedMesh != null)
-                info += pObject.sharedMesh.GetPreviewInfo();
-
-            return (info);
+            return "";
         }
 
         public static string GetPreviewInfo(this Mesh pObject)
         {
-            string info = "";
+            if( pObject != null )
+                return pObject.vertexCount + " verts " + pObject.triangles.Length + " tris"
+                       + "\n" + pObject.name;
 
-            info += pObject.vertexCount + " verts " + pObject.triangles.Length + " tris"
-                    + "\n" + pObject.name;
-
-            return (info);
+            return "";
         }
 
         public static string GetPreviewInfo(this MeshRenderer pObject)
         {
-            string info = "";
-
-            //	info += "blah";
-
-            return (info);
+            return "";
         }
 
         public static string GetPreviewInfo(this MonoScript pObject)
         {
             string info = "";
 
-            Type assetclass = pObject.GetClass();
-            if (assetclass != null)
-                info += assetclass.ToString() + "\n(" + assetclass.BaseType.ToString().Replace("UnityEngine.", "") + ")";
-            else
-                info += "(multiple classes)";
+            if( pObject != null )
+            {
+                Type assetclass = pObject.GetClass();
+                if( assetclass != null )
+                    return assetclass.ToString() + "\n(" + assetclass.BaseType.ToString().Replace( "UnityEngine.", "" ) + ")";
+                else
+                    return "(multiple classes)";
+            }
 
-            return (info);
+            return "";
         }
 
         public static string GetPreviewInfo(this Shader pObject)
         {
-            string info = "";
+            if( pObject != null )
+                return pObject.renderQueue.ToString();
 
-            info += pObject.renderQueue;
-
-            return (info);
+            return "";
         }
 
         public static string GetPreviewInfo(this MonoBehaviour pObject)
         {
-            string info = "";
+            if( pObject != null )
+            {
+                MonoScript ms = MonoScript.FromMonoBehaviour( pObject );
+                if( ms != null )
+                    return ms.name;
+            }
 
-            MonoScript ms = MonoScript.FromMonoBehaviour(pObject);
-
-            info += ms.name;
-
-            return (info);
+            return "";
         }
 
         public static string GetPreviewInfo(this GameObject pObject)
         {
-            string info = "";
+            if( pObject != null )
+            {
+                GameObject parent = PrefabUtility.GetPrefabParent( pObject ) as GameObject;
+                if( parent != null )
+                    return AssetDatabase.GetAssetPath( parent );
+            }
 
-            GameObject parent = PrefabUtility.GetPrefabParent(pObject) as GameObject;
-            if (parent != null)
-                info += AssetDatabase.GetAssetPath(parent);
-
-            return (info);
+            return "";
         }
 
 
@@ -197,63 +193,64 @@ namespace Tenebrous.EditorEnhancements
 
         public static string GetPreviewInfo(this Behaviour pObject)
         {
-            string info = "";
-
-            if (pObject is Light)
-                info += (pObject as Light).GetPreviewInfo();
+            if( pObject == null )
+                return "";
+            else if (pObject is Light)
+                return (pObject as Light).GetPreviewInfo();
             else if (pObject is Camera)
-                info += (pObject as Camera).GetPreviewInfo();
+                return (pObject as Camera).GetPreviewInfo();
             else if (pObject is AudioSource)
-                info += (pObject as AudioSource).GetPreviewInfo();
+                return (pObject as AudioSource).GetPreviewInfo();
             else if (pObject is AudioReverbFilter)
-                info += (pObject as AudioReverbFilter).GetPreviewInfo();
+                return (pObject as AudioReverbFilter).GetPreviewInfo();
 
-            return (info);
+            return "";
         }
 
         public static string GetPreviewInfo(this Light pObject)
         {
-            string info = "";
+            if( pObject != null )
+                return pObject.type.ToString();
 
-            info += pObject.type;
-
-            return (info);
+            return "";
         }
 
         public static string GetPreviewInfo(this Camera pObject)
         {
-            string info = "";
+            if( pObject != null )
+            {
+                if( pObject.orthographic )
+                    return "Orthographic";
+                else
+                    return "Perspective";
+            }
 
-            if (pObject.orthographic)
-                info += "Orthographic";
-            else
-                info += "Perspective";
-
-            return (info);
+            return "";
         }
 
         public static string GetPreviewInfo(this AudioSource pObject)
         {
-            string info = "";
+            if( pObject != null && pObject.clip != null )
+                return pObject.clip.name;
 
-            info += pObject.clip.name;
-
-            return (info);
+            return "";
         }
 
         public static string GetPreviewInfo(this AudioReverbFilter pObject)
         {
-            string info = "";
+            if( pObject != null )
+                return pObject.reverbPreset.ToString();
 
-            info += pObject.reverbPreset;
-
-            return (info);
+            return "";
         }
 
         // other extensions
 
         public static bool HasAnyRenderers(this GameObject pObject)
         {
+            if( pObject == null )
+                return false;
+
             if (pObject.renderer != null)
                 return (true);
 
