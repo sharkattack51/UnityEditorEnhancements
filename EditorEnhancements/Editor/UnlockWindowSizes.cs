@@ -35,13 +35,11 @@ namespace Tenebrous.EditorEnhancements
 		{
 			UnlockSizes();
 			EditorApplication.update += Update;
-			Debug.Log("enabled");
 		}
 
 		public override void OnDisable()
 		{
 			EditorApplication.update -= Update;
-			Debug.Log("disabled");
 		}
 
 		public override string Name
