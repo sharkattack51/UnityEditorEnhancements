@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 Tenebrous
+ * Copyright (c) 2014 Tenebrous
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,12 +22,9 @@
  * Latest version: http://hg.tenebrous.co.uk/unityeditorenhancements/wiki/Home
 */
 
-using System;
-using System.IO;
 using Tenebrous.EditorEnhancements;
 using UnityEditor;
 using UnityEngine;
-using System.Collections;
 using Object = UnityEngine.Object;
 
 public class TeneEnhPreviewWindow : EditorWindow
