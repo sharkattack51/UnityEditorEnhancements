@@ -28,6 +28,7 @@ using UnityEngine;
 using UnityEditor;
 using System.Collections.Generic;
 using Object = UnityEngine.Object;
+using System.Reflection;
 
 namespace Tenebrous.EditorEnhancements
 {
@@ -61,6 +62,8 @@ namespace Tenebrous.EditorEnhancements
         private bool _setting_showHoverTooltipShift;
         private bool _setting_showHoverTooltipCtrl;
         private bool _setting_showHoverTooltipAlt;
+
+        //private bool _setting_showFoldersFirst;
 
 		private string _lastGUID;
 		private string _currentGUID;
@@ -128,6 +131,8 @@ namespace Tenebrous.EditorEnhancements
                 CheckScriptInfo( File.ReadAllText( Common.TempRecompilationList ) );
                 File.Delete( Common.TempRecompilationList );
             }
+
+            //SetProjectWindowFoldersFirst( _setting_showFoldersFirst );
 
             if( Common.ProjectWindow != null ) Common.ProjectWindow.Repaint();
         }
@@ -436,6 +441,52 @@ namespace Tenebrous.EditorEnhancements
 			_fileAttrs.Remove( Path.GetDirectoryName(sAsset) );
 		}
 
+        public void SetProjectWindowFoldersFirst( bool pValue )
+        {
+            // trying to get to:
+            // projectWindow (UnityEditor.ProjectBrowser)
+            //   .m_AssetTree (UnityEditor.TreeView field)
+            //     .data (UnityEditor.AssetsTreeViewDataSource property)
+            //       .foldersFirst (bool property)
+
+            //try
+            {
+                // experimental, so at the moment don't catch any specific issues
+
+                EditorWindow e = Common.ProjectWindow;
+
+                if (e == null)
+                    return;
+
+                // get projectWindow.m_AssetTree
+                Type projectWindowType = typeof(EditorWindow).Assembly.GetType("UnityEditor.ProjectBrowser");
+                FieldInfo projectWindow_AssetTree_Field = projectWindowType.GetField("m_AssetTree", BindingFlags.NonPublic | BindingFlags.Instance);
+                object assetTree = projectWindow_AssetTree_Field.GetValue(e);
+
+                // get projectWindow.m_AssetTree.data
+                Type treeViewType = typeof(EditorWindow).Assembly.GetType("UnityEditor.TreeView");
+                PropertyInfo treeView_Data_Property = treeViewType.GetProperty("data");
+                MethodInfo treeView_ReloadData_Method = treeViewType.GetMethod("ReloadData");
+                object data = treeView_Data_Property.GetValue(assetTree, new object[] { });
+
+                // get projectWindow.m_AssetTree.data.foldersFirst
+                Type assetsTreeViewDataSourceType = typeof(EditorWindow).Assembly.GetType("UnityEditor.AssetsTreeViewDataSource");
+                PropertyInfo assetsTreeViewDS_FoldersFirst_Property = assetsTreeViewDataSourceType.GetProperty("foldersFirst", typeof(bool));
+
+                // finally get the actual value and change it if required
+                bool value = (bool)assetsTreeViewDS_FoldersFirst_Property.GetValue(data, new object[] { });
+
+                if (value != pValue )
+                {
+                    assetsTreeViewDS_FoldersFirst_Property.SetValue(data, pValue, new object[] { });
+                    treeView_ReloadData_Method.Invoke( assetTree, new object[] { } );
+                }   
+            }
+            //catch( Exception e )
+            //{
+                //Debug.Log(e);
+            //}
+        }
 
 		//////////////////////////////////////////////////////////////////////
 
@@ -450,7 +501,15 @@ namespace Tenebrous.EditorEnhancements
 
 		public override void DrawPreferences()
 		{
-			_setting_showExtensionsWhen = (ShowExtensions)EditorGUILayout.EnumPopup( "Show extensions", (Enum)_setting_showExtensionsWhen );
+
+            _setting_showExtensionsWhen = (ShowExtensions)EditorGUILayout.EnumPopup("Show extensions", (Enum)_setting_showExtensionsWhen);
+
+            //EditorGUILayout.BeginHorizontal();
+            //EditorGUILayout.Space();
+            //_setting_showFoldersFirst = GUILayout.Toggle(_setting_showFoldersFirst, "");
+            //GUILayout.Label("Show folders first", GUILayout.Width(176));
+            //GUILayout.FlexibleSpace();
+            //EditorGUILayout.EndHorizontal();
 
 			EditorGUILayout.BeginHorizontal();
 				EditorGUILayout.Space();
@@ -458,8 +517,7 @@ namespace Tenebrous.EditorEnhancements
 				GUILayout.Label( "Show folder file count", GUILayout.Width( 176 ) );
 				GUILayout.FlexibleSpace();
 			EditorGUILayout.EndHorizontal();
-
-
+            
             EditorGUILayout.BeginHorizontal();
 				EditorGUILayout.Space();
 				_setting_showHoverPreview = GUILayout.Toggle( _setting_showHoverPreview, "" );
@@ -546,6 +604,7 @@ namespace Tenebrous.EditorEnhancements
 			if( GUI.changed )
 			{
 				SaveSettings();
+                //SetProjectWindowFoldersFirst( _setting_showFoldersFirst );
 				Common.ProjectWindow.Repaint();
 			}
 		}
@@ -593,7 +652,9 @@ namespace Tenebrous.EditorEnhancements
             _setting_showHoverTooltip      = Main.Bool[this, "HoverTooltip",        Defaults.ProjectWindowHoverTooltip ];
             _setting_showHoverTooltipShift = Main.Bool[this, "HoverTooltipShift",   Defaults.ProjectWindowHoverTooltipShift ];
             _setting_showHoverTooltipCtrl  = Main.Bool[this, "HoverTooltipCtrl",    Defaults.ProjectWindowHoverTooltipCtrl ];
-            _setting_showHoverTooltipAlt   = Main.Bool[this, "HoverTooltipAlt",     Defaults.ProjectWindowHoverTooltipAlt ];
+            _setting_showHoverTooltipAlt   = Main.Bool[this, "HoverTooltipAlt",     Defaults.ProjectWindowHoverTooltipAlt];
+
+            //_setting_showFoldersFirst      = Main.Bool[this, "ShowFoldersFirst",    Application.platform != RuntimePlatform.OSXEditor];
 
 			//string colormap = Common.GetLongPref("TeneProjectWindow_ColorMap");
         }
@@ -617,6 +678,7 @@ namespace Tenebrous.EditorEnhancements
             Main.Bool[ this, "HoverTooltipShift"   ] = _setting_showHoverTooltipShift;
             Main.Bool[ this, "HoverTooltipCtrl"    ] = _setting_showHoverTooltipCtrl;
             Main.Bool[ this, "HoverTooltipAlt"     ] = _setting_showHoverTooltipAlt;
+            //Main.Bool[ this, "ShowFoldersFirst"    ] = _setting_showFoldersFirst;
         }
 	}
 
