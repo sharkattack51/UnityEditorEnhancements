@@ -211,26 +211,10 @@ namespace Tenebrous.EditorEnhancements
 
 			bool currentLock = ( gameObject.hideFlags & HideFlags.NotEditable ) != 0;
 
-		    bool doPreview = _setting_showHoverPreview
-		                     && ( !_setting_showHoverPreviewShift || ( Event.current.modifiers & EventModifiers.Shift   ) != 0 )
-		                     && ( !_setting_showHoverPreviewCtrl  || ( Event.current.modifiers & EventModifiers.Control ) != 0 )
-		                     && ( !_setting_showHoverPreviewAlt   || ( Event.current.modifiers & EventModifiers.Alt     ) != 0 );
-
-			bool doTooltip = _setting_showHoverTooltip
-							 && ( !_setting_showHoverTooltipShift || ( Event.current.modifiers & EventModifiers.Shift   ) != 0 )
-							 && ( !_setting_showHoverTooltipCtrl  || ( Event.current.modifiers & EventModifiers.Control ) != 0 )
-							 && ( !_setting_showHoverTooltipAlt   || ( Event.current.modifiers & EventModifiers.Alt     ) != 0 );
-
-			bool doComponents = _setting_showComponents
-							 && ( !_setting_showComponentsShift || ( Event.current.modifiers & EventModifiers.Shift ) != 0 )
-							 && ( !_setting_showComponentsCtrl || ( Event.current.modifiers & EventModifiers.Control ) != 0 )
-							 && ( !_setting_showComponentsAlt || ( Event.current.modifiers & EventModifiers.Alt ) != 0 );
-
-			bool doLockIcon = _setting_showLock
-							 && ( !_setting_showLockShift  || ( Event.current.modifiers & EventModifiers.Shift   ) != 0 )
-							 && ( !_setting_showLockCtrl   || ( Event.current.modifiers & EventModifiers.Control ) != 0 )
-							 && ( !_setting_showLockAlt    || ( Event.current.modifiers & EventModifiers.Alt     ) != 0 );
-
+			bool doPreview    = Common.Modifier( _setting_showHoverPreview, _setting_showHoverPreviewShift, _setting_showHoverPreviewCtrl, _setting_showHoverPreviewAlt );
+			bool doTooltip    = Common.Modifier( _setting_showHoverTooltip, _setting_showHoverTooltipShift, _setting_showHoverTooltipCtrl, _setting_showHoverTooltipAlt );
+			bool doComponents = Common.Modifier( _setting_showComponents,   _setting_showComponentsShift,   _setting_showComponentsCtrl,   _setting_showComponentsAlt   );
+			bool doLockIcon   = Common.Modifier( _setting_showLock,         _setting_showLockShift,         _setting_showLockCtrl,         _setting_showLockAlt         );
 			doLockIcon |= _setting_showLock && _setting_showLockLocked && currentLock;
 
 

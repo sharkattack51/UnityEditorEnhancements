@@ -222,6 +222,15 @@ namespace Tenebrous.EditorEnhancements
 			return value;
 		}
 
+		public static bool Modifier(bool pEnabled, bool pRequireShift, bool pRequireCtrl, bool pRequireAlt)
+		{
+			return pEnabled
+				&& ( !pRequireShift || ( Event.current.modifiers & EventModifiers.Shift   ) != 0 )
+				&& ( !pRequireCtrl  || ( Event.current.modifiers & EventModifiers.Control ) != 0 )
+				&& ( !pRequireAlt   || ( Event.current.modifiers & EventModifiers.Alt     ) != 0 );
+		}
+
+
 		public static Texture GetMiniThumbnail( UnityEngine.Object obj )
 		{
 #if UNITY_4

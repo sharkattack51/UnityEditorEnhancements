@@ -37,5 +37,7 @@ namespace Tenebrous.EditorEnhancements
 		public const bool ProjectWindowHoverTooltipShift   = false;
 		public const bool ProjectWindowHoverTooltipCtrl    = false;
 		public const bool ProjectWindowHoverTooltipAlt     = false;
+
+		public const bool ProjectWindowUseDependencyChceker = false;
 	}
 }
