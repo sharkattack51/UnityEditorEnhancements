@@ -398,6 +398,9 @@ namespace Tenebrous.EditorEnhancements
 
                     if( mouseIn )
                         DragAndDrop.visualMode = DragAndDropVisualMode.Generic;
+
+                    if( _draggingHeldOver == gameObject )
+                        GUI.DrawTexture(new Rect(0, labelRect.y + labelRect.height / 2.0f, labelRect.x, 1), EditorGUIUtility.whiteTexture);
                 }
             }
     
