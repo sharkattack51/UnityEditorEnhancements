@@ -122,6 +122,7 @@ public class TeneDropTarget : EditorWindow
 		EditorGUIUtility.LookLikeInspector();
 
 		Object dragging = DragAndDrop.objectReferences[0];
+	    string note;
 
 		foreach( Component component in _target.GetComponents<Component>() )
 		{
@@ -130,7 +131,8 @@ public class TeneDropTarget : EditorWindow
 
 			foreach( FieldInfo f in FieldsFor( type ) )
 			{
-				if( !IsCompatibleField(f,dragging) )
+			    note = "";
+				if( !IsCompatibleField(f,dragging, ref note) )
 					continue;
 
 				if( !drawnHeader )
@@ -143,10 +145,10 @@ public class TeneDropTarget : EditorWindow
 
 				UnityEngine.Object oldValue = (UnityEngine.Object)f.GetValue( component );
 				EditorGUILayout.BeginHorizontal( GUILayout.Width( 330.0f ) );
-				GUILayout.Label( "    " + f.Name, GUILayout.Width( 150.0f ) );
+                GUILayout.Label("    " + f.Name, GUILayout.Width(150.0f));
 
 				Object newValue;
-				newValue = EditorGUILayout.ObjectField( oldValue, f.FieldType, true, GUILayout.Height( 20 ) );
+				newValue = EditorGUILayout.ObjectField( oldValue, f.FieldType, true, GUILayout.Height( 20 ), GUILayout.Width(250) );
 
 				if( newValue != oldValue )
 				{
@@ -157,7 +159,10 @@ public class TeneDropTarget : EditorWindow
 					_closeTime = System.DateTime.Now;
 				}
 
+                GUILayout.Label( note );
+
 				EditorGUILayout.EndHorizontal();
+
 				items++;
 			}
 		}
@@ -174,14 +179,14 @@ public class TeneDropTarget : EditorWindow
 			r.height = Mathf.Max( r.height, 50.0f );
 
 			float newY = _desiredPosition.y - r.height / 2;
-			float newX = _desiredPosition.x - 350.0f;
+			float newX = _desiredPosition.x - 500.0f;
 
 			if( newY < 0 )
 				newY = 0;
 			else if( newY + r.height > Screen.currentResolution.height - 32 )
 				newY = Screen.currentResolution.height - r.height - 32;
 
-			position = new Rect( newX, newY, 350.0f, r.height );
+			position = new Rect( newX, newY, 500.0f, r.height );
 
 			_repositioned = true;
 		}
@@ -197,20 +202,28 @@ public class TeneDropTarget : EditorWindow
 		return pType.GetFields( BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic );
 	}
 
-	public static bool IsCompatibleField( FieldInfo pField, Object pDesiredValue )
+	public static bool IsCompatibleField( FieldInfo pField, Object pDesiredValue, ref string pNote )
 	{
-		if( !pField.FieldType.IsInstanceOfType( pDesiredValue ) )
-			return false;
-
-		if( pField.IsStatic )
-			return false;
+        if (pField.IsStatic)
+            return false;
 
 		if( Attribute.IsDefined( pField, typeof( System.NonSerializedAttribute ) ) )
 			return false;
 
-		if( Attribute.IsDefined( pField, typeof( SerializeField ) ) )
-			return true;
+        if (!pField.IsPublic && !Attribute.IsDefined(pField, typeof(SerializeField)))
+            return false;
 
-		return pField.IsPublic;
+        if( pField.FieldType.IsSubclassOf( typeof(Component) ))
+            if( pDesiredValue is GameObject )
+                if( ( (GameObject)pDesiredValue ).GetComponent( pField.FieldType ) != null )
+                {
+                    pNote = "(" + pField.FieldType.ToString().Replace("UnityEngine.","") + ")";
+                    return true;
+                }
+
+	    if (!pField.FieldType.IsInstanceOfType(pDesiredValue))
+            return false;
+
+	    return true;
 	}
 }

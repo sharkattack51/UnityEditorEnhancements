@@ -126,7 +126,8 @@ namespace Tenebrous.EditorEnhancements
         private void Update()
         {
             bool nowDragging = DragAndDrop.objectReferences.Length == 1;
-            if( _wasDragging != nowDragging )
+
+            if (_wasDragging != nowDragging)
             {
                 // detect when dragging state changes, so we force a refresh of the hierarchy
                 _wasDragging = nowDragging;
@@ -135,6 +136,7 @@ namespace Tenebrous.EditorEnhancements
                 {
                     _draggingHeldOver = null;
                     _draggingShownQuickInspector = false;
+                    TeneDropTarget.Hide();
                 }
 
                 // doesn't appear to refresh when starting to drag stuff
@@ -217,6 +219,7 @@ namespace Tenebrous.EditorEnhancements
             bool doLockIcon   = Common.Modifier( _setting_showLock,         _setting_showLockShift,         _setting_showLockCtrl,         _setting_showLockAlt         );
             doLockIcon |= _setting_showLock && _setting_showLockLocked && currentLock;
 
+            Object dragging = DragAndDrop.objectReferences.Length == 1 ? DragAndDrop.objectReferences[0] : null;
 
             string tooltip = "";
 
@@ -255,6 +258,21 @@ namespace Tenebrous.EditorEnhancements
                 GUI.Label( labelRect, "".PadRight( gameObject.name.Length, '_' ) );
             }
 
+            if( gameObject == dragging && _draggingShownQuickInspector )
+            {
+                Rect labelRect = pDrawingRect;
+
+                labelRect.width = width;
+                labelRect.x -= 2;
+                labelRect.y += 1;
+
+                GUI.color = Color.red;
+                GUI.DrawTexture(new Rect(labelRect.x, labelRect.y, labelRect.width, 1), EditorGUIUtility.whiteTexture);
+                GUI.DrawTexture(new Rect(labelRect.x, labelRect.y, 1, labelRect.height), EditorGUIUtility.whiteTexture);
+                GUI.DrawTexture(new Rect(labelRect.x, labelRect.yMax, labelRect.width, 1), EditorGUIUtility.whiteTexture);
+                GUI.DrawTexture(new Rect(labelRect.xMax, labelRect.y, 1, labelRect.height), EditorGUIUtility.whiteTexture);
+            }
+
             if( doTooltip )
             {
                 tooltip = GetTooltip( gameObject );
@@ -277,8 +295,6 @@ namespace Tenebrous.EditorEnhancements
                 if( doPreview && mouseIn )
                     _hoverObject = gameObject;
 
-                Object dragging = DragAndDrop.objectReferences.Length == 1 ? DragAndDrop.objectReferences[ 0 ] : null;
-
                 if( DragAndDrop.objectReferences.Length == 1 && _setting_showHoverDropWindow && mouseIn )
                 {
                     if( _draggingHeldOver == null )
@@ -292,6 +308,7 @@ namespace Tenebrous.EditorEnhancements
 
                 bool suitableDrop = false;
                 bool drawnEtc = false;
+                string tempNote = "";
 
                 foreach( Component c in gameObject.GetComponents<Component>() )
                 {
@@ -302,7 +319,7 @@ namespace Tenebrous.EditorEnhancements
                     {
                         Type type = c.GetType();
                         foreach( FieldInfo f in TeneDropTarget.FieldsFor( type ) )
-                            if( TeneDropTarget.IsCompatibleField( f, dragging ) )
+                            if (TeneDropTarget.IsCompatibleField(f, dragging, ref tempNote))
                             {
                                 suitableDrop = true;
                                 break;
