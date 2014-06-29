@@ -61,6 +61,11 @@ namespace Tenebrous.EditorEnhancements
         private bool _setting_showLockCtrl;
         private bool _setting_showLockAlt;
 
+        private bool _setting_showEnabled;
+        private bool _setting_showEnabledShift;
+        private bool _setting_showEnabledCtrl;
+        private bool _setting_showEnabledAlt;
+
         private bool _setting_showHoverDropWindow;
 
         private Object _hoverObject;
@@ -216,6 +221,7 @@ namespace Tenebrous.EditorEnhancements
             bool doPreview    = Common.Modifier( _setting_showHoverPreview, _setting_showHoverPreviewShift, _setting_showHoverPreviewCtrl, _setting_showHoverPreviewAlt );
             bool doTooltip    = Common.Modifier( _setting_showHoverTooltip, _setting_showHoverTooltipShift, _setting_showHoverTooltipCtrl, _setting_showHoverTooltipAlt );
             bool doComponents = Common.Modifier( _setting_showComponents,   _setting_showComponentsShift,   _setting_showComponentsCtrl,   _setting_showComponentsAlt   );
+            bool doEnabled    = Common.Modifier( _setting_showEnabled,      _setting_showEnabledShift,      _setting_showEnabledCtrl,      _setting_showEnabledAlt);
             bool doLockIcon   = Common.Modifier( _setting_showLock,         _setting_showLockShift,         _setting_showLockCtrl,         _setting_showLockAlt         );
             doLockIcon |= _setting_showLock && _setting_showLockLocked && currentLock;
 
@@ -224,6 +230,19 @@ namespace Tenebrous.EditorEnhancements
             string tooltip = "";
 
             Color originalColor = GUI.color;
+
+            if( doEnabled )
+            {
+                Rect r = pDrawingRect;
+                r.x = r.x + r.width - 14;
+                r.width = 12;
+
+                bool bNewActive = GUI.Toggle( r, gameObject.activeSelf, "");
+                if( bNewActive != gameObject.activeSelf )
+                    gameObject.SetActive( bNewActive );
+
+                pDrawingRect.width -= 14;
+            }
 
             if( doLockIcon )
             {
@@ -583,6 +602,11 @@ namespace Tenebrous.EditorEnhancements
             _setting_showLockCtrl          = Main.Bool[ this, "LockCtrl",            Defaults.HierarchyWindowLockCtrl ];
             _setting_showLockAlt           = Main.Bool[ this, "LockAlt",             Defaults.HierarchyWindowLockAlt ];
 
+            _setting_showEnabled           = Main.Bool[ this, "Enabled",             Defaults.HierarchyWindowEnabled ];
+            _setting_showEnabledShift      = Main.Bool[ this, "EnabledShift",        Defaults.HierarchyWindowEnabledShift ];
+            _setting_showEnabledCtrl       = Main.Bool[ this, "EnabledCtrl",         Defaults.HierarchyWindowEnabledCtrl ];
+            _setting_showEnabledAlt        = Main.Bool[ this, "EnabledAlt",          Defaults.HierarchyWindowEnabledAlt ];
+
             _setting_showHoverDropWindow   = Main.Bool[ this, "HoverDropWindow",     Defaults.HierarchyWindowHoverDropWindow ];
         }
 
@@ -608,7 +632,12 @@ namespace Tenebrous.EditorEnhancements
             Main.Bool[ this, "LockShift"           ] = _setting_showLockShift;
             Main.Bool[ this, "LockCtrl"            ] = _setting_showLockCtrl;
             Main.Bool[ this, "LockAlt"             ] = _setting_showLockAlt;     
-            
+
+            Main.Bool[ this, "Enabled"             ] = _setting_showEnabled;     
+            Main.Bool[ this, "EnabledShift"        ] = _setting_showEnabledShift;
+            Main.Bool[ this, "EnabledCtrl"         ] = _setting_showEnabledCtrl;
+            Main.Bool[ this, "EnabledAlt"          ] = _setting_showEnabledAlt;     
+
             Main.Bool[ this, "HoverDropWindow"     ] = _setting_showHoverDropWindow;
         }
     }

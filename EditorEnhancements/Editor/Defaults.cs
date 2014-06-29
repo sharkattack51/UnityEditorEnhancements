@@ -23,6 +23,11 @@ namespace Tenebrous.EditorEnhancements
 		public const bool HierarchyWindowLockCtrl          = false;
 		public const bool HierarchyWindowLockAlt           = false;
 
+        public const bool HierarchyWindowEnabled           = true;
+		public const bool HierarchyWindowEnabledShift      = true;
+		public const bool HierarchyWindowEnabledCtrl       = false;
+		public const bool HierarchyWindowEnabledAlt        = false;
+
 		public const bool HierarchyWindowHoverDropWindow   = true;
 
 		public const TeneProjectWindow.ShowExtensions ProjectWindowExtensionsWhen = TeneProjectWindow.ShowExtensions.OnlyWhenConflicts;
