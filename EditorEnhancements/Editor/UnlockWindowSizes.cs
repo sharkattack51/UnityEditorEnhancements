@@ -33,13 +33,15 @@ namespace Tenebrous.EditorEnhancements
 
 		public override void OnEnable()
 		{
-			UnlockSizes();
+            UnlockSizes();
 			EditorApplication.update += Update;
+            EditorApplication.playmodeStateChanged += UnlockSizes;
 		}
 
 		public override void OnDisable()
-		{
+		{                          
 			EditorApplication.update -= Update;
+            EditorApplication.playmodeStateChanged -= UnlockSizes;
 		}
 
 		public override string Name
@@ -58,16 +60,13 @@ namespace Tenebrous.EditorEnhancements
 			}
 		}
 
-		private static void UnlockSizes()
-		{
+        private static void UnlockSizes()
+        {
 			EditorWindow[] windows = (EditorWindow[]) Resources.FindObjectsOfTypeAll(typeof (EditorWindow));
-			if (windows.Length != numWindows)
-			{
-				foreach (EditorWindow window in windows)
-					window.minSize = new Vector2(10, 10);
+			foreach (EditorWindow window in windows)
+				window.minSize = new Vector2(10, 10);
 
-				numWindows = windows.Length;
-			}
+			numWindows = windows.Length;
 		}
 
 		private static int _update;
@@ -75,8 +74,11 @@ namespace Tenebrous.EditorEnhancements
 		{
 			if (_update++ > 100)
 			{
-				_update = 0;
-				UnlockSizes();
+                _update = 0;
+
+                EditorWindow[] windows = (EditorWindow[])Resources.FindObjectsOfTypeAll( typeof( EditorWindow ) );
+                if( windows.Length != numWindows )
+				    UnlockSizes();
 			}
 		}
 	}
