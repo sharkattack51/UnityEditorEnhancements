@@ -177,7 +177,6 @@ namespace Tenebrous.EditorEnhancements
 				DependencyChecker.Refresh();
 		}
 
-		private TeneEnhPreviewWindow _window;
 		private void Update()
 		{
 			if (_setting_useDependencyChecker)
