@@ -56,6 +56,7 @@ namespace Tenebrous.EditorEnhancements
         
 		// settings
         private ShowExtensions _setting_showExtensionsWhen;
+        private bool _setting_showExtensionsFilename;
 		private bool _setting_showFileCount;
 
 		private bool _setting_showHoverPreview;
@@ -269,79 +270,93 @@ namespace Tenebrous.EditorEnhancements
 				    if( GetExtensionsCount( extension, filename, path ) <= 1 )
 					    return;
 
-			Color labelColor = Color.grey;
-			string drawextension = "";
+            GUIStyle labelstyle;
 
-			if( !isFolder )
-			{
-				extension = extension.Substring( 1 );
-				drawextension = extension;
+            if( _setting_showExtensionsFilename )
+            {
+                labelstyle = icons ? new GUIStyle( EditorStyles.miniLabel ) : new GUIStyle( EditorStyles.label );
+                Rect extRect = pDrawingRect;
+                extRect.x += labelstyle.CalcSize( new GUIContent( filename ) ).x + 12;
+                extRect.y++;
 
-				if( !_colorMap.TryGetValue( extension.ToLower(), out labelColor ) )
-					labelColor = Color.grey;
-			}
-			else
-			{
-				labelColor = new Color(0.75f,0.75f,0.75f,1.0f);
-				int files = GetFolderFilesCount( assetpath );
-				if( files == 0 )
-					return;
-				drawextension = "(" + files + ")";
-			}
+                if( !isFolder )
+                    GUI.Label( extRect, extension );
 
-			GUIStyle labelstyle = icons ? Common.ColorMiniLabel(labelColor) : Common.ColorLabel(labelColor);
+                return;
+            }
 
-			Rect newRect = pDrawingRect;
-			Vector2 labelSize = labelstyle.CalcSize( new GUIContent( drawextension ) );
+            Color labelColor = Color.grey;
+            string drawextension = "";
 
-			if( icons )
-			{
-				labelSize = labelstyle.CalcSize( new GUIContent( drawextension ) );
-				newRect.x += newRect.width - labelSize.x;
-				newRect.width = labelSize.x;
-				newRect.height = labelSize.y;
-			}
-			else
-			{
+            if( !isFolder )
+            {
+                extension = extension.Substring( 1 );
+                drawextension = extension;
+
+                if( !_colorMap.TryGetValue( extension.ToLower(), out labelColor ) )
+                    labelColor = Color.grey;
+            }
+            else
+            {
+                labelColor = new Color( 0.75f, 0.75f, 0.75f, 1.0f );
+                int files = GetFolderFilesCount( assetpath );
+                if( files == 0 )
+                    return;
+                drawextension = "(" + files + ")";
+            }
+
+            labelstyle = icons ? Common.ColorMiniLabel( labelColor ) : Common.ColorLabel( labelColor );
+            Rect newRect = pDrawingRect;
+            Vector2 labelSize = labelstyle.CalcSize( new GUIContent( drawextension ) );
+
+            if( icons )
+            {
+                labelSize = labelstyle.CalcSize( new GUIContent( drawextension ) );
+                newRect.x += newRect.width - labelSize.x;
+                newRect.width = labelSize.x;
+                newRect.height = labelSize.y;
+            }
+            else
+            {
 #if UNITY_4
-				newRect.width += pDrawingRect.x - (_needHackScrollbarWidthForDrawing ? 16 : 0);
-				newRect.x = 0;
+                newRect.width += pDrawingRect.x - (_needHackScrollbarWidthForDrawing ? 16 : 0);
+                newRect.x = 0;
 #else
-				newRect.width += pDrawingRect.x;
-				newRect.x = 0;
+                newRect.width += pDrawingRect.x;
+                newRect.x = 0;
 #endif
-				newRect.x = newRect.width - labelSize.x;
-				if( !isFolder )
-				{
-					newRect.x -= 4;
-					drawextension = "." + drawextension;
-				}
+                newRect.x = newRect.width - labelSize.x;
+                if( !isFolder )
+                {
+                    newRect.x -= 4;
+                    drawextension = "." + drawextension;
+                }
 
-				labelSize = labelstyle.CalcSize( new GUIContent( drawextension ) );
+                labelSize = labelstyle.CalcSize( new GUIContent( drawextension ) );
 
-				newRect.width = labelSize.x + 1;
+                newRect.width = labelSize.x + 1;
 
-				if( isFolder )
-				{
-					newRect = pDrawingRect;
-					newRect.x += labelstyle.CalcSize( new GUIContent( filename ) ).x + 20;
-				}
-			}
-			
-			Color color = GUI.color;
+                if( isFolder )
+                {
+                    newRect = pDrawingRect;
+                    newRect.x += labelstyle.CalcSize( new GUIContent( filename ) ).x + 20;
+                }
+            }
 
-			if( !isFolder || icons )
-			{
-				// fill background
-				Color bgColor = Common.DefaultBackgroundColor;
-				bgColor.a = 1;
-				GUI.color = bgColor;
-				GUI.DrawTexture( newRect, EditorGUIUtility.whiteTexture );
-			}
+            Color color = GUI.color;
 
-			GUI.color = labelColor;
-			GUI.Label( newRect, drawextension, labelstyle );
-			GUI.color = color;
+            if( !isFolder || icons )
+            {
+                // fill background
+                Color bgColor = Common.DefaultBackgroundColor;
+                bgColor.a = 1;
+                GUI.color = bgColor;
+                GUI.DrawTexture( newRect, EditorGUIUtility.whiteTexture );
+            }
+
+            GUI.color = labelColor;
+            GUI.Label( newRect, drawextension, labelstyle );
+            GUI.color = color;
 		}
 
 		private FileAttributes GetFileAttr( string assetpath )
@@ -519,6 +534,9 @@ namespace Tenebrous.EditorEnhancements
 
             _setting_showExtensionsWhen = (ShowExtensions)EditorGUILayout.EnumPopup("Show extensions", (Enum)_setting_showExtensionsWhen);
 
+            if( _setting_showExtensionsWhen != ShowExtensions.Never )
+                _setting_showExtensionsFilename = EditorGUILayout.Toggle( "   as part of filename", _setting_showExtensionsFilename );
+
             //EditorGUILayout.BeginHorizontal();
             //EditorGUILayout.Space();
             //_setting_showFoldersFirst = GUILayout.Toggle(_setting_showFoldersFirst, "");
@@ -663,29 +681,31 @@ namespace Tenebrous.EditorEnhancements
 			//string colourinfo;
 			ConvertOldSettings();
 
-			_setting_showExtensionsWhen    = (ShowExtensions)Main.Int[this, "WhenExtensions", (int)Defaults.ProjectWindowExtensionsWhen];
-			_setting_showFileCount         = Main.Bool[this, "FileCount",           Defaults.ProjectWindowFileCount         ];
+			_setting_showExtensionsWhen     = (ShowExtensions)Main.Int[this, "WhenExtensions", (int)Defaults.ProjectWindowExtensionsWhen];
+            _setting_showExtensionsFilename = Main.Bool[this, "ShowExtensionsFilename", Defaults.ProjectWindowExtensionsFilename];
+			_setting_showFileCount          = Main.Bool[this, "FileCount",           Defaults.ProjectWindowFileCount         ];
 
-			_setting_showHoverPreview      = Main.Bool[this, "PreviewOnHover",      Defaults.ProjectWindowHoverPreview      ];
-            _setting_showHoverPreviewShift = Main.Bool[this, "PreviewOnHoverShift", Defaults.ProjectWindowHoverPreviewShift ];
-            _setting_showHoverPreviewCtrl  = Main.Bool[this, "PreviewOnHoverCtrl",  Defaults.ProjectWindowHoverPreviewCtrl  ];
-            _setting_showHoverPreviewAlt   = Main.Bool[this, "PreviewOnHoverAlt",   Defaults.ProjectWindowHoverPreviewAlt   ];
+			_setting_showHoverPreview       = Main.Bool[this, "PreviewOnHover",      Defaults.ProjectWindowHoverPreview      ];
+            _setting_showHoverPreviewShift  = Main.Bool[this, "PreviewOnHoverShift", Defaults.ProjectWindowHoverPreviewShift ];
+            _setting_showHoverPreviewCtrl   = Main.Bool[this, "PreviewOnHoverCtrl",  Defaults.ProjectWindowHoverPreviewCtrl  ];
+            _setting_showHoverPreviewAlt    = Main.Bool[this, "PreviewOnHoverAlt",   Defaults.ProjectWindowHoverPreviewAlt   ];
 
-            _setting_showHoverTooltip      = Main.Bool[this, "HoverTooltip",        Defaults.ProjectWindowHoverTooltip      ];
-            _setting_showHoverTooltipShift = Main.Bool[this, "HoverTooltipShift",   Defaults.ProjectWindowHoverTooltipShift ];
-            _setting_showHoverTooltipCtrl  = Main.Bool[this, "HoverTooltipCtrl",    Defaults.ProjectWindowHoverTooltipCtrl  ];
-            _setting_showHoverTooltipAlt   = Main.Bool[this, "HoverTooltipAlt",     Defaults.ProjectWindowHoverTooltipAlt   ];
+            _setting_showHoverTooltip       = Main.Bool[this, "HoverTooltip",        Defaults.ProjectWindowHoverTooltip      ];
+            _setting_showHoverTooltipShift  = Main.Bool[this, "HoverTooltipShift",   Defaults.ProjectWindowHoverTooltipShift ];
+            _setting_showHoverTooltipCtrl   = Main.Bool[this, "HoverTooltipCtrl",    Defaults.ProjectWindowHoverTooltipCtrl  ];
+            _setting_showHoverTooltipAlt    = Main.Bool[this, "HoverTooltipAlt",     Defaults.ProjectWindowHoverTooltipAlt   ];
 
             //_setting_showFoldersFirst      = Main.Bool[this, "ShowFoldersFirst",    Application.platform != RuntimePlatform.OSXEditor];
 
-			_setting_useDependencyChecker  = Main.Bool[this, "DependencyChecker",   Defaults.ProjectWindowUseDependencyChceker ];
+			_setting_useDependencyChecker  = Main.Bool[this, "DependencyChecker",    Defaults.ProjectWindowUseDependencyChceker ];
 
 			//string colormap = Common.GetLongPref("TeneProjectWindow_ColorMap");
         }
 
 		private void SaveSettings()
 		{
-			Main.Int[ this, "WhenExtensions" ] = (int)_setting_showExtensionsWhen;
+			Main.Int[  this, "WhenExtensions"         ] = (int)_setting_showExtensionsWhen;
+            Main.Bool[ this, "ShowExtensionsFilename" ] = _setting_showExtensionsFilename;
 
 			string colormap = "";
 			foreach( KeyValuePair<string, Color> entry in _colorMap )

@@ -31,6 +31,7 @@ namespace Tenebrous.EditorEnhancements
 		public const bool HierarchyWindowHoverDropWindow   = true;
 
 		public const TeneProjectWindow.ShowExtensions ProjectWindowExtensionsWhen = TeneProjectWindow.ShowExtensions.OnlyWhenConflicts;
+        public const bool ProjectWindowExtensionsFilename  = false;
 		public const bool ProjectWindowFileCount           = false;
 		
 		public const bool ProjectWindowHoverPreview        = true;
