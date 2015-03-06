@@ -22,8 +22,8 @@
  * Latest version: http://hg.tenebrous.co.uk/unityeditorenhancements/wiki/Home
 */
 
-#if UNITY_4_0 || UNITY_4_1 || UNITY_4_2 || UNITY_4_3 || UNITY_4_4 || UNITY_4_5 || UNITY_4_6
-#define UNITY_4
+#if UNITY_4_0 || UNITY_4_1 || UNITY_4_2 || UNITY_4_3 || UNITY_4_4 || UNITY_4_5 || UNITY_4_6 || UNITY_5
+#define UNITY_4_PLUS
 #endif
 
 using System.IO;
@@ -232,18 +232,18 @@ namespace Tenebrous.EditorEnhancements
 
 
 		public static Texture GetMiniThumbnail( UnityEngine.Object obj )
-		{
-#if UNITY_4
-			return ( AssetPreview.GetMiniThumbnail( obj ) );
+        {
+#if UNITY_4_PLUS
+            return ( AssetPreview.GetMiniThumbnail( obj ) );
 #else
 			return ( EditorUtility.GetMiniThumbnail( obj ) );
 #endif
 		}
 
 		public static Texture2D GetAssetPreview( UnityEngine.Object obj )
-		{
-#if UNITY_4
-			return ( AssetPreview.GetAssetPreview( obj ) );
+        {
+#if UNITY_4_PLUS
+            return ( AssetPreview.GetAssetPreview( obj ) );
 #else
 			return ( EditorUtility.GetAssetPreview( obj ) );
 #endif

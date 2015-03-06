@@ -22,8 +22,8 @@
  * Latest version: http://hg.tenebrous.co.uk/unityeditorenhancements/wiki/Home
 */
 
-#if UNITY_4_0 || UNITY_4_1 || UNITY_4_2 || UNITY_4_3 || UNITY_4_4 || UNITY_4_5 || UNITY_4_6
-#define UNITY_4
+#if UNITY_4_0 || UNITY_4_1 || UNITY_4_2 || UNITY_4_3 || UNITY_4_4 || UNITY_4_5 || UNITY_4_6 || UNITY_5
+#define UNITY_4_PLUS
 #endif
 
 using System;
@@ -256,8 +256,8 @@ namespace Tenebrous.EditorEnhancements
 
 			_mousePosition = new Vector2(Event.current.mousePosition.x + Common.ProjectWindow.position.x, Event.current.mousePosition.y + Common.ProjectWindow.position.y );
 
-#if UNITY_4
-			if( Event.current.mousePosition.x < pDrawingRect.width - 16 )
+#if UNITY_4_PLUS
+            if ( Event.current.mousePosition.x < pDrawingRect.width - 16 )
 #endif
 			if( doPreview )
 				if( pDrawingRect.Contains( Event.current.mousePosition ) )
@@ -318,7 +318,7 @@ namespace Tenebrous.EditorEnhancements
             }
             else
             {
-#if UNITY_4
+#if UNITY_4_PLUS
                 newRect.width += pDrawingRect.x - (_needHackScrollbarWidthForDrawing ? 16 : 0);
                 newRect.x = 0;
 #else
@@ -761,7 +761,11 @@ namespace Tenebrous.EditorEnhancements
     }
 
 
+#if UNITY_5
+    public class ProjectWindowAMP : UnityEditor.AssetModificationProcessor
+#else
 	public class ProjectWindowAMP : AssetModificationProcessor
+#endif
 	{
 		private static void OnWillSaveAssets(string[] pPaths)
 		{

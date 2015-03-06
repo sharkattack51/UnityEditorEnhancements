@@ -251,7 +251,7 @@ namespace Tenebrous.EditorEnhancements
             if( pObject == null )
                 return false;
 
-            if (pObject.renderer != null)
+            if (pObject.GetComponent<Renderer>() != null)
                 return (true);
 
             foreach (Transform child in pObject.transform)
