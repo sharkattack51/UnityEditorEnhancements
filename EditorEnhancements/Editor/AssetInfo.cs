@@ -142,8 +142,6 @@ namespace Tenebrous.EditorEnhancements
 
         public static string GetPreviewInfo(this MonoScript pObject)
         {
-            string info = "";
-
             if( pObject != null )
             {
                 Type assetclass = pObject.GetClass();

@@ -22,6 +22,10 @@
  * Latest version: http://hg.tenebrous.co.uk/unityeditorenhancements/wiki/Home
 */
 
+#if UNITY_4_3 || UNITY_4_4 || UNITY_4_5 || UNITY_4_6 || UNITY_5
+#define UNITY_4_3_PLUS
+#endif
+
 using System;
 using System.IO;
 using System.Reflection;
@@ -55,9 +59,12 @@ public class TeneDropTarget : EditorWindow
 		_window._repositioned = false;
 		//_window._anchoredTo = pAnchorTo;
 		_window.HadMouseOver = false;
-
-		_window.title = pObject.name;
-		_window.SetTarget( pObject );
+#if UNITY_5 && !UNITY_5_0
+        _window.titleContent = new GUIContent(pObject.name);
+#else
+        _window.title = pObject.name;
+#endif
+        _window.SetTarget( pObject );
 		_window.SetPosition( pAnchorTo, pMousePosition );
 	}
 
@@ -119,7 +126,7 @@ public class TeneDropTarget : EditorWindow
 			HadMouseOver = true;
 
 		int items = 0;
-		EditorGUIUtility.LookLikeInspector();
+		//EditorGUIUtility.LookLikeInspector();
 
 		Object dragging = DragAndDrop.objectReferences[0];
 	    string note;
@@ -152,8 +159,12 @@ public class TeneDropTarget : EditorWindow
 
 				if( newValue != oldValue )
 				{
-					Undo.RegisterUndo( component, "Change field" );
-					f.SetValue( component, newValue );
+#if UNITY_4_3_PLUS
+                    Undo.RecordObject( component, "Change field" );
+#else
+                    Undo.RegisterUndo( component, "Change field" );
+#endif
+                    f.SetValue( component, newValue );
 					EditorUtility.SetDirty( component.gameObject );
 					_close = true;
 					_closeTime = System.DateTime.Now;

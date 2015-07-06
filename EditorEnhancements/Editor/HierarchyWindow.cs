@@ -22,6 +22,10 @@
  * Latest version: http://hg.tenebrous.co.uk/unityeditorenhancements/wiki/Home
 */
 
+#if UNITY_4_3 || UNITY_4_4 || UNITY_4_5 || UNITY_4_6 || UNITY_5
+#define UNITY_4_3_PLUS
+#endif
+
 using System;
 using System.Reflection;
 using UnityEngine;
@@ -661,7 +665,11 @@ namespace Tenebrous.EditorEnhancements
             if( pComponent == null )
                 return;
 
+#if UNITY_4_3_PLUS
+            Undo.RecordObject(pComponent, pNewValue ? "Enable Component" : "Disable Component");
+#else
             Undo.RegisterUndo( pComponent, pNewValue ? "Enable Component" : "Disable Component" );
+#endif
 
             PropertyInfo p = pComponent.GetType().GetProperty( "enabled", typeof( bool ) );
 
