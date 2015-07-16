@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014 Tenebrous
+ * Copyright (c) 2015 Tenebrous
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -64,6 +64,7 @@ namespace Tenebrous.EditorEnhancements
         private bool _setting_showLockShift;
         private bool _setting_showLockCtrl;
         private bool _setting_showLockAlt;
+        private bool _setting_disallowSelection;
 
         private bool _setting_showEnabled;
         private bool _setting_showEnabledShift;
@@ -260,9 +261,9 @@ namespace Tenebrous.EditorEnhancements
                 if( newLock != currentLock )
                 {
                     if( newLock )
-                        gameObject.hideFlags |= HideFlags.NotEditable;
+                        UpdateLock( gameObject, true );
                     else
-                        gameObject.hideFlags -= HideFlags.NotEditable;
+                        UpdateLock( gameObject, false );
                 }
 
                 GUI.color = originalColor;
@@ -430,6 +431,30 @@ namespace Tenebrous.EditorEnhancements
             GUI.color = originalColor;
         }
 
+        private void UpdateLock( GameObject pObject, bool pLocked )
+        {
+            if( pLocked )
+            {
+                pObject.hideFlags |= HideFlags.NotEditable;
+
+                if( _setting_disallowSelection )
+                    foreach( Component c in pObject.GetComponents( typeof( Component) ) )
+                        if( !( c is Transform ) )
+                            c.hideFlags |= HideFlags.NotEditable | HideFlags.HideInHierarchy;
+            }
+            else
+            {
+                pObject.hideFlags &= ~HideFlags.NotEditable;
+
+                if( _setting_disallowSelection )
+                    foreach( Component c in pObject.GetComponents( typeof( Component ) ) )
+                        if( !(c is Transform) )
+                            c.hideFlags &= ~(HideFlags.NotEditable | HideFlags.HideInHierarchy);
+            }
+
+            EditorUtility.SetDirty( pObject );
+        }
+
         private string GetTooltip( UnityEngine.Object pObject )
         {
             string tooltip;
@@ -536,6 +561,13 @@ namespace Tenebrous.EditorEnhancements
 
             EditorGUILayout.BeginHorizontal();
                 EditorGUILayout.Space();
+                _setting_disallowSelection = GUILayout.Toggle( _setting_disallowSelection, "" );
+                GUILayout.Label( "Locking an object also prevents it's selection" );
+                GUILayout.FlexibleSpace();
+            EditorGUILayout.EndHorizontal();
+
+            EditorGUILayout.BeginHorizontal();
+                EditorGUILayout.Space();
                 _setting_showHoverDropWindow = GUILayout.Toggle( _setting_showHoverDropWindow, "" );
                 GUILayout.Label( "Quick-drop window", GUILayout.Width( 176 ) );
                 GUILayout.FlexibleSpace();
@@ -605,6 +637,7 @@ namespace Tenebrous.EditorEnhancements
             _setting_showLockShift         = Main.Bool[ this, "LockShift",           Defaults.HierarchyWindowLockShift ];
             _setting_showLockCtrl          = Main.Bool[ this, "LockCtrl",            Defaults.HierarchyWindowLockCtrl ];
             _setting_showLockAlt           = Main.Bool[ this, "LockAlt",             Defaults.HierarchyWindowLockAlt ];
+            _setting_disallowSelection     = Main.Bool[ this, "LockUnselectable",    Defaults.HierarchyWindowLockUnselectable];
 
             _setting_showEnabled           = Main.Bool[ this, "Enabled",             Defaults.HierarchyWindowEnabled ];
             _setting_showEnabledShift      = Main.Bool[ this, "EnabledShift",        Defaults.HierarchyWindowEnabledShift ];
@@ -635,7 +668,8 @@ namespace Tenebrous.EditorEnhancements
             Main.Bool[ this, "LockLocked"          ] = _setting_showLockLocked;     
             Main.Bool[ this, "LockShift"           ] = _setting_showLockShift;
             Main.Bool[ this, "LockCtrl"            ] = _setting_showLockCtrl;
-            Main.Bool[ this, "LockAlt"             ] = _setting_showLockAlt;     
+            Main.Bool[ this, "LockAlt"             ] = _setting_showLockAlt;
+            Main.Bool[ this, "LockUnselectable"    ] = _setting_disallowSelection;
 
             Main.Bool[ this, "Enabled"             ] = _setting_showEnabled;     
             Main.Bool[ this, "EnabledShift"        ] = _setting_showEnabledShift;

@@ -22,6 +22,7 @@ namespace Tenebrous.EditorEnhancements
 		public const bool HierarchyWindowLockShift         = true;
 		public const bool HierarchyWindowLockCtrl          = false;
 		public const bool HierarchyWindowLockAlt           = false;
+	    public const bool HierarchyWindowLockUnselectable  = false;
 
         public const bool HierarchyWindowEnabled           = true;
 		public const bool HierarchyWindowEnabledShift      = true;
