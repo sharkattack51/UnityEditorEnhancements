@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014 Tenebrous
+ * Copyright (c) 2016 Tenebrous
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -19,7 +19,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  *
- * Latest version: http://hg.tenebrous.co.uk/unityeditorenhancements/wiki/Home
+ * Latest version: https://bitbucket.org/Tenebrous/unityeditorenhancements/wiki/Home
 */
 
 #if UNITY_4_0 || UNITY_4_1 || UNITY_4_2 || UNITY_4_3 || UNITY_4_4 || UNITY_4_5 || UNITY_4_6 || UNITY_5
@@ -80,6 +80,8 @@ namespace Tenebrous.EditorEnhancements
 
 		// any version-specific hacks
 		private bool _needHackScrollbarWidthForDrawing;
+
+        private HashSet<string> _GUIDsToIgnore = new HashSet<string>();
 
         public override void OnEnable()
         {
@@ -212,19 +214,38 @@ namespace Tenebrous.EditorEnhancements
 			}
 		}
 
+	    private float _lastY;
+        private void DrawingStarted()
+        {
+            _GUIDsToIgnore.Clear();
+        }
+
 		private void Draw( string pGUID, Rect pDrawingRect )
 		{
-			// called per-line in the project window
+            // called per-line in the project window
+
+
+            // if we're drawing at a higher position from the last time, then
+            // assume we're drawing from the top again and clear stuff we might
+            // need to clear
+            if( pDrawingRect.y < _lastY )
+                DrawingStarted();
+
+		    _lastY = pDrawingRect.y;
+
+
+            // now process the asset
 
 			string assetpath = AssetDatabase.GUIDToAssetPath( pGUID );
-			string extension = Path.GetExtension( assetpath );
+
+            if( assetpath.Length == 0 )
+                return;
+
+            string extension = Path.GetExtension( assetpath );
 			string filename = Path.GetFileNameWithoutExtension( assetpath );
 			bool isFolder = false;
 
 			bool icons = pDrawingRect.height > 20;
-
-			if( assetpath.Length == 0 )
-				return;
 
 			string path = Path.GetDirectoryName( assetpath );
 
@@ -280,7 +301,13 @@ namespace Tenebrous.EditorEnhancements
                 extRect.y++;
 
                 if( !isFolder )
-                    GUI.Label( extRect, extension );
+                {
+                    if( !_GUIDsToIgnore.Contains( pGUID ) )
+                    {
+                        GUI.Label( extRect, extension );
+                        _GUIDsToIgnore.Add( pGUID );
+                    }
+                }
 
                 return;
             }
