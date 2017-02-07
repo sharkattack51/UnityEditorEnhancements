@@ -297,7 +297,7 @@ namespace Tenebrous.EditorEnhancements
             {
                 labelstyle = icons ? new GUIStyle( EditorStyles.miniLabel ) : new GUIStyle( EditorStyles.label );
                 Rect extRect = pDrawingRect;
-                extRect.x += labelstyle.CalcSize( new GUIContent( filename ) ).x + 12;
+                extRect.x += labelstyle.CalcSize( new GUIContent( filename ) ).x + 15;
                 extRect.y++;
 
                 if( !isFolder )
