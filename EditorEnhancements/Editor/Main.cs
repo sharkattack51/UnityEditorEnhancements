@@ -55,8 +55,8 @@ namespace Tenebrous.EditorEnhancements
 			// enable all those which are actually enabled
 
 	        foreach (EditorEnhancement e in list)
-                if( EditorPrefs.GetBool(e.Prefix + "_Enabled", true) )
-                    e.OnEnable();
+		        if( EditorPrefs.GetBool( e.Prefix + "_Enabled", true ) )
+			        e.OnEnable();
         }
 
         public static T Enhancement<T>() where T : EditorEnhancement

@@ -22,7 +22,7 @@
  * Latest version: https://bitbucket.org/Tenebrous/unityeditorenhancements/wiki/Home
 */
 
-#if UNITY_4_3 || UNITY_4_4 || UNITY_4_5 || UNITY_4_6 || UNITY_5
+#if UNITY_4_3 || UNITY_4_4 || UNITY_4_5 || UNITY_4_6 || UNITY_5 || UNITY_5_3_OR_NEWER
 #define UNITY_4_3_PLUS
 #endif
 
@@ -59,7 +59,7 @@ public class TeneDropTarget : EditorWindow
 		_window._repositioned = false;
 		//_window._anchoredTo = pAnchorTo;
 		_window.HadMouseOver = false;
-#if UNITY_5 && !UNITY_5_0
+#if (UNITY_5 || UNITY_5_3_OR_NEWER) && !UNITY_5_0
         _window.titleContent = new GUIContent(pObject.name);
 #else
         _window.title = pObject.name;

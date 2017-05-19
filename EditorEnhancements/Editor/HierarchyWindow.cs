@@ -22,7 +22,7 @@
  * Latest version: https://bitbucket.org/Tenebrous/unityeditorenhancements/wiki/Home
 */
 
-#if UNITY_4_3 || UNITY_4_4 || UNITY_4_5 || UNITY_4_6 || UNITY_5
+#if UNITY_4_3 || UNITY_4_4 || UNITY_4_5 || UNITY_4_6 || UNITY_5 || UNITY_5_3_OR_NEWER
 #define UNITY_4_3_PLUS
 #endif
 

@@ -128,10 +128,10 @@ public class TeneEnhPreviewWindow : EditorWindow
 	private void SetPreview( string pGUID = null, string pPath = null, Object pAsset = null )
 	{
 		Resolve( ref pGUID, ref pPath, ref pAsset );
-
+//
         string newTitle = pAsset.name + " (" + pAsset.GetType().ToString().Replace("UnityEngine.", "") + ")";
 
-#if UNITY_5 && !UNITY_5_0
+#if (UNITY_5 || UNITY_5_3_OR_NEWER) && !UNITY_5_0
         titleContent = new GUIContent(newTitle);
 #else
         title = newTitle;

@@ -22,7 +22,7 @@
  * Latest version: https://bitbucket.org/Tenebrous/unityeditorenhancements/wiki/Home
 */
 
-#if UNITY_4_0 || UNITY_4_1 || UNITY_4_2 || UNITY_4_3 || UNITY_4_4 || UNITY_4_5 || UNITY_4_6 || UNITY_5
+#if UNITY_4_0 || UNITY_4_1 || UNITY_4_2 || UNITY_4_3 || UNITY_4_4 || UNITY_4_5 || UNITY_4_6 || UNITY_5 || UNITY_5_3_OR_NEWER
 #define UNITY_4_PLUS
 #endif
 
@@ -85,8 +85,11 @@ namespace Tenebrous.EditorEnhancements
 
         public override void OnEnable()
         {
-            EditorApplication.projectWindowItemOnGUI += Draw;
-            EditorApplication.update += Update;
+	        EditorApplication.projectWindowItemOnGUI -= Draw;
+	        EditorApplication.projectWindowItemOnGUI += Draw;
+
+	        EditorApplication.update -= Update;
+	        EditorApplication.update += Update;
 
             if( EditorGUIUtility.isProSkin )
                 _colorMap = new Dictionary<string, Color>()
@@ -146,7 +149,7 @@ namespace Tenebrous.EditorEnhancements
 
 			if( _setting_useDependencyChecker )
 				DependencyChecker.Refresh();
-        }
+        }//
 
         public override void OnDisable()
         {
@@ -223,7 +226,6 @@ namespace Tenebrous.EditorEnhancements
 		private void Draw( string pGUID, Rect pDrawingRect )
 		{
             // called per-line in the project window
-
 
             // if we're drawing at a higher position from the last time, then
             // assume we're drawing from the top again and clear stuff we might
@@ -788,7 +790,7 @@ namespace Tenebrous.EditorEnhancements
     }
 
 
-#if UNITY_5
+#if UNITY_5 || UNITY_5_3_OR_NEWER
     public class ProjectWindowAMP : UnityEditor.AssetModificationProcessor
 #else
 	public class ProjectWindowAMP : AssetModificationProcessor
