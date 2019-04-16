@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright (c) 2016 Tenebrous
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -97,7 +97,7 @@ namespace Tenebrous.EditorEnhancements
             EditorApplication.hierarchyWindowItemOnGUI += Draw;
             EditorApplication.update += Update;
             SceneView.onSceneGUIDelegate += Updated;
-            EditorApplication.hierarchyWindowChanged += ClearTooltipCache;
+            EditorApplication.hierarchyChanged += ClearTooltipCache;
             EditorApplication.modifierKeysChanged += ModifierKeysChanged;
             if( Common.HierarchyWindow != null ) Common.HierarchyWindow.Repaint();
         }
@@ -107,7 +107,7 @@ namespace Tenebrous.EditorEnhancements
             EditorApplication.hierarchyWindowItemOnGUI -= Draw;
             EditorApplication.update -= Update;
             SceneView.onSceneGUIDelegate -= Updated;
-            EditorApplication.hierarchyWindowChanged -= ClearTooltipCache;
+            EditorApplication.hierarchyChanged -= ClearTooltipCache;
             EditorApplication.modifierKeysChanged -= ModifierKeysChanged;
             Common.HierarchyWindow.Repaint();
         }
@@ -161,7 +161,7 @@ namespace Tenebrous.EditorEnhancements
                 {
                     // don't currently support plain old gameobjects
                     if( _hoverObject is GameObject )
-                        if( PrefabUtility.GetPrefabParent( _hoverObject ) == null )
+                        if( PrefabUtility.GetCorrespondingObjectFromSource( _hoverObject ) == null )
                             _hoverObject = null;
                 }
 

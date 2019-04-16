@@ -77,7 +77,7 @@ public class TeneEnhPreviewWindow : EditorWindow
 			pAsset = ( (AudioSource)pAsset ).clip;
 		else if( pAsset is GameObject )
 		{
-			GameObject pBaseAsset = PrefabUtility.GetPrefabParent(pAsset) as GameObject;
+			GameObject pBaseAsset = PrefabUtility.GetCorrespondingObjectFromSource(pAsset) as GameObject;
 			if( pBaseAsset != null )
 				pAsset = pBaseAsset;
 		}

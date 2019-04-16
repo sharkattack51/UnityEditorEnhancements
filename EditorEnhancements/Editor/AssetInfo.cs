@@ -178,7 +178,7 @@ namespace Tenebrous.EditorEnhancements
         {
             if( pObject != null )
             {
-                GameObject parent = PrefabUtility.GetPrefabParent( pObject ) as GameObject;
+                GameObject parent = PrefabUtility.GetCorrespondingObjectFromSource( pObject ) as GameObject;
                 if( parent != null )
                     return AssetDatabase.GetAssetPath( parent );
             }

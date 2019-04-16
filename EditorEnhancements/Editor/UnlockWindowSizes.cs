@@ -35,13 +35,13 @@ namespace Tenebrous.EditorEnhancements
 		{
             UnlockSizes();
 			EditorApplication.update += Update;
-            EditorApplication.playmodeStateChanged += UnlockSizes;
+            EditorApplication.playModeStateChanged += UnlockSizes;
 		}
 
 		public override void OnDisable()
 		{                          
 			EditorApplication.update -= Update;
-            EditorApplication.playmodeStateChanged -= UnlockSizes;
+            EditorApplication.playModeStateChanged -= UnlockSizes;
 		}
 
 		public override string Name
@@ -58,6 +58,11 @@ namespace Tenebrous.EditorEnhancements
 			{
 				return "TeneUnlockWindowSizes";
 			}
+		}
+
+		private static void UnlockSizes(PlayModeStateChange change)
+        {
+			UnlockSizes();
 		}
 
         private static void UnlockSizes()

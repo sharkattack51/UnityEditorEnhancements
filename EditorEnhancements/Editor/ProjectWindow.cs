@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright (c) 2016 Tenebrous
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -251,6 +251,12 @@ namespace Tenebrous.EditorEnhancements
 
 			string path = Path.GetDirectoryName( assetpath );
 
+#if UNITY_2018
+			// Exclude PackageManager "Packages" folder
+			if(path.Contains("Packages"))
+				return;
+#endif
+
 			isFolder = (GetFileAttr(assetpath) & FileAttributes.Directory) != 0;
 
 			if (_setting_useDependencyChecker && !isFolder && !DependencyChecker.IsUsed(assetpath) )
@@ -319,8 +325,11 @@ namespace Tenebrous.EditorEnhancements
 
             if( !isFolder )
             {
-                extension = extension.Substring( 1 );
-                drawextension = extension;
+				if (extension != "")
+				{
+                	extension = extension.Substring( 1 );
+                	drawextension = extension;
+				}
 
                 if( !_colorMap.TryGetValue( extension.ToLower(), out labelColor ) )
                     labelColor = Color.grey;
@@ -358,7 +367,9 @@ namespace Tenebrous.EditorEnhancements
                 if( !isFolder )
                 {
                     newRect.x -= 4;
-                    drawextension = "." + drawextension;
+					
+					if (drawextension != "")
+                    	drawextension = "." + drawextension;
                 }
 
                 labelSize = labelstyle.CalcSize( new GUIContent( drawextension ) );
@@ -378,7 +389,10 @@ namespace Tenebrous.EditorEnhancements
             {
                 // fill background
                 Color bgColor = Common.DefaultBackgroundColor;
-                bgColor.a = 1;
+				if (drawextension != "")
+                	bgColor.a = 1;
+				else
+					bgColor.a = 0;
                 GUI.color = bgColor;
                 GUI.DrawTexture( newRect, EditorGUIUtility.whiteTexture );
             }
