@@ -251,12 +251,12 @@ namespace Tenebrous.EditorEnhancements
 
 			string path = Path.GetDirectoryName( assetpath );
 
-#if UNITY_2018
+#if UNITY_2018_1_OR_NEWER
 			// Exclude PackageManager "Packages" folder
 			if(path.Contains("Packages"))
 				return;
 #endif
-
+			Debug.LogWarning(path);
 			isFolder = (GetFileAttr(assetpath) & FileAttributes.Directory) != 0;
 
 			if (_setting_useDependencyChecker && !isFolder && !DependencyChecker.IsUsed(assetpath) )
