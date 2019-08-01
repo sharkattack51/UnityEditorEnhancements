@@ -256,7 +256,7 @@ namespace Tenebrous.EditorEnhancements
 			if(path.Contains("Packages"))
 				return;
 #endif
-			Debug.LogWarning(path);
+
 			isFolder = (GetFileAttr(assetpath) & FileAttributes.Directory) != 0;
 
 			if (_setting_useDependencyChecker && !isFolder && !DependencyChecker.IsUsed(assetpath) )
